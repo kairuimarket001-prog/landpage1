@@ -186,22 +186,44 @@ class AdminController
             return $response->withHeader('Content-Type', 'application/json')->withStatus(401);
         }
 
-        $assignments = $this->loadAssignments();
+        try {
+            $assignments = $this->loadAssignments();
 
-        $enrichedAssignments = array_map(function($assignment) {
-            $sessionId = $assignment['session_id'] ?? $assignment['id'] ?? '';
+            $enrichedAssignments = array_map(function($assignment) {
+                try {
+                    $sessionId = $assignment['session_id'] ?? $assignment['id'] ?? '';
 
-            $user = $this->getUserBySession($sessionId);
-            $profile = $this->getUserProfileBySession($sessionId);
+                    $user = $this->getUserBySession($sessionId);
+                    $profile = $this->getUserProfileBySession($sessionId);
 
-            $assignment['user'] = $user;
-            $assignment['profile'] = $profile;
+                    $assignment['user'] = $user;
+                    $assignment['profile'] = $profile;
 
-            return $assignment;
-        }, $assignments);
+                    return $assignment;
+                } catch (\Throwable $e) {
+                    $this->logger->error("Error enriching assignment", [
+                        'assignment_id' => $assignment['id'] ?? 'unknown',
+                        'error' => $e->getMessage()
+                    ]);
+                    $assignment['user'] = null;
+                    $assignment['profile'] = null;
+                    return $assignment;
+                }
+            }, $assignments);
 
-        $response->getBody()->write(json_encode($enrichedAssignments));
-        return $response->withHeader('Content-Type', 'application/json');
+            $response->getBody()->write(json_encode($enrichedAssignments));
+            return $response->withHeader('Content-Type', 'application/json');
+        } catch (\Throwable $e) {
+            $this->logger->error("Error in apiAssignments", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            $response->getBody()->write(json_encode([
+                'error' => 'Internal server error',
+                'message' => 'Failed to load assignments data'
+            ]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
+        }
     }
 
     public function apiSettings(Request $request, Response $response): Response
@@ -516,17 +538,30 @@ class AdminController
             return null;
         }
 
-        $handle = fopen($file, 'r');
-        while (($line = fgets($handle)) !== false) {
-            $user = json_decode($line, true);
-            if ($user && ($user['session_id'] ?? '') === $sessionId) {
-                fclose($handle);
-                return $user;
+        try {
+            $handle = @fopen($file, 'r');
+            if ($handle === false) {
+                $this->logger->warning("Failed to open users.jsonl file", ['file' => $file]);
+                return null;
             }
-        }
-        fclose($handle);
 
-        return null;
+            while (($line = fgets($handle)) !== false) {
+                $user = json_decode($line, true);
+                if ($user && ($user['session_id'] ?? '') === $sessionId) {
+                    fclose($handle);
+                    return $user;
+                }
+            }
+            fclose($handle);
+
+            return null;
+        } catch (\Throwable $e) {
+            $this->logger->error("Error reading users.jsonl", [
+                'error' => $e->getMessage(),
+                'session_id' => $sessionId
+            ]);
+            return null;
+        }
     }
 
     private function getUserProfileBySession(string $sessionId): ?array
@@ -541,17 +576,31 @@ class AdminController
             return null;
         }
 
-        $handle = fopen($file, 'r');
-        $latestProfile = null;
-        while (($line = fgets($handle)) !== false) {
-            $profile = json_decode($line, true);
-            if ($profile && isset($user['id']) && ($profile['user_id'] ?? '') === $user['id']) {
-                $latestProfile = $profile;
+        try {
+            $handle = @fopen($file, 'r');
+            if ($handle === false) {
+                $this->logger->warning("Failed to open user_profiles.jsonl file", ['file' => $file]);
+                return null;
             }
-        }
-        fclose($handle);
 
-        return $latestProfile;
+            $latestProfile = null;
+            while (($line = fgets($handle)) !== false) {
+                $profile = json_decode($line, true);
+                if ($profile && isset($user['id']) && ($profile['user_id'] ?? '') === $user['id']) {
+                    $latestProfile = $profile;
+                }
+            }
+            fclose($handle);
+
+            return $latestProfile;
+        } catch (\Throwable $e) {
+            $this->logger->error("Error reading user_profiles.jsonl", [
+                'error' => $e->getMessage(),
+                'session_id' => $sessionId,
+                'user_id' => $user['id'] ?? null
+            ]);
+            return null;
+        }
     }
 
     // 渲染方法
