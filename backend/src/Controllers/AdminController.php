@@ -363,20 +363,28 @@ class AdminController
 
     private function loadTrackingDataPaginated(int $page, int $perPage): array
     {
-        $file = $this->dataDir . '/../logs/tracking.log';
-        $trackingData = [];
+        $allBehaviors = [];
 
+        $file = $this->dataDir . '/../logs/tracking.log';
         if (file_exists($file)) {
             $lines = file($file, FILE_IGNORE_NEW_LINES);
-            $lines = array_reverse($lines);
 
             foreach ($lines as $line) {
                 if (preg_match('/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \[([^\]]+)\] (.+)$/', $line, $matches)) {
-                    $trackingData[] = [
-                        'timestamp' => $matches[1],
-                        'type' => $matches[2],
-                        'data' => json_decode($matches[3], true) ?: $matches[3]
-                    ];
+                    $data = json_decode($matches[3], true);
+                    if ($data && isset($data['session_id'])) {
+                        $allBehaviors[] = [
+                            'session_id' => $data['session_id'],
+                            'timestamp' => $matches[1],
+                            'type' => $matches[2],
+                            'action_type' => $data['action_type'] ?? '',
+                            'stock_name' => $data['stock_name'] ?? '',
+                            'stock_code' => $data['stock_code'] ?? '',
+                            'ip' => $data['ip'] ?? '',
+                            'url' => $data['url'] ?? '',
+                            'data' => $data
+                        ];
+                    }
                 }
             }
         }
@@ -384,30 +392,63 @@ class AdminController
         $behaviorFile = $this->dataDir . '/user_behaviors.jsonl';
         if (file_exists($behaviorFile)) {
             $lines = file($behaviorFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-            $lines = array_reverse($lines);
 
             foreach ($lines as $line) {
                 $data = json_decode($line, true);
-                if ($data) {
-                    $trackingData[] = [
+                if ($data && isset($data['session_id'])) {
+                    $allBehaviors[] = [
+                        'session_id' => $data['session_id'],
                         'timestamp' => $data['timestamp'] ?? '',
                         'type' => 'user_behavior',
+                        'action_type' => $data['action_type'] ?? '',
+                        'stock_name' => $data['stock_name'] ?? '',
+                        'stock_code' => $data['stock_code'] ?? '',
+                        'ip' => $data['ip'] ?? '',
+                        'url' => $data['url'] ?? '',
                         'data' => $data
                     ];
                 }
             }
         }
 
-        usort($trackingData, function($a, $b) {
+        usort($allBehaviors, function($a, $b) {
             return strtotime($b['timestamp']) - strtotime($a['timestamp']);
         });
 
-        $total = count($trackingData);
+        $groupedBySession = [];
+        foreach ($allBehaviors as $behavior) {
+            $sessionId = $behavior['session_id'];
+            if (!isset($groupedBySession[$sessionId])) {
+                $groupedBySession[$sessionId] = [
+                    'session_id' => $sessionId,
+                    'first_seen' => $behavior['timestamp'],
+                    'last_seen' => $behavior['timestamp'],
+                    'ip' => $behavior['ip'],
+                    'stock_name' => $behavior['stock_name'],
+                    'stock_code' => $behavior['stock_code'],
+                    'behaviors' => []
+                ];
+            }
+            $groupedBySession[$sessionId]['behaviors'][] = $behavior;
+            if (strtotime($behavior['timestamp']) < strtotime($groupedBySession[$sessionId]['first_seen'])) {
+                $groupedBySession[$sessionId]['first_seen'] = $behavior['timestamp'];
+            }
+            if (strtotime($behavior['timestamp']) > strtotime($groupedBySession[$sessionId]['last_seen'])) {
+                $groupedBySession[$sessionId]['last_seen'] = $behavior['timestamp'];
+            }
+        }
+
+        $sessions = array_values($groupedBySession);
+        usort($sessions, function($a, $b) {
+            return strtotime($b['last_seen']) - strtotime($a['last_seen']);
+        });
+
+        $total = count($sessions);
         $offset = ($page - 1) * $perPage;
-        $paginatedData = array_slice($trackingData, $offset, $perPage);
+        $paginatedSessions = array_slice($sessions, $offset, $perPage);
 
         return [
-            'data' => $paginatedData,
+            'sessions' => $paginatedSessions,
             'page' => $page,
             'per_page' => $perPage,
             'total' => $total,
@@ -922,19 +963,39 @@ HTML;
         .navbar h1 { margin: 0; font-size: 1.5rem; }
         .navbar a { color: white; text-decoration: none; margin-left: 1rem; }
         .navbar a:hover { text-decoration: underline; }
-        .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+        .container { max-width: 1400px; margin: 2rem auto; padding: 0 1rem; }
         .card { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 2rem; }
         .card-header { padding: 1rem 1.5rem; border-bottom: 1px solid #dee2e6; font-weight: bold; }
-        .card-body { padding: 1.5rem; }
-        .table { width: 100%; border-collapse: collapse; }
-        .table th, .table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #dee2e6; }
-        .table th { background: #f8f9fa; font-weight: bold; }
-        .log-entry { margin-bottom: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 4px; }
-        .log-timestamp { font-weight: bold; color: #007bff; }
-        .log-type { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
-        .log-type-page_track { background: #d4edda; color: #155724; }
+        .card-body { padding: 0; }
+
+        .tabs-container { display: flex; border-bottom: 1px solid #dee2e6; overflow-x: auto; background: #f8f9fa; }
+        .tab { padding: 1rem 1.5rem; cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; transition: all 0.3s; }
+        .tab:hover { background: #e9ecef; }
+        .tab.active { border-bottom-color: #007bff; background: white; font-weight: bold; color: #007bff; }
+        .tab-badge { display: inline-block; margin-left: 0.5rem; padding: 0.2rem 0.5rem; background: #6c757d; color: white; border-radius: 10px; font-size: 0.75rem; }
+        .tab.active .tab-badge { background: #007bff; }
+
+        .tab-content { display: none; padding: 1.5rem; }
+        .tab-content.active { display: block; }
+
+        .session-info { display: flex; justify-content: space-between; padding: 1rem; background: #e9ecef; border-radius: 4px; margin-bottom: 1rem; }
+        .session-info-item { display: flex; flex-direction: column; }
+        .session-info-label { font-size: 0.8rem; color: #6c757d; margin-bottom: 0.25rem; }
+        .session-info-value { font-weight: bold; color: #495057; }
+
+        .log-entry { margin-bottom: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 4px; border-left: 4px solid #dee2e6; }
+        .log-timestamp { font-weight: bold; color: #007bff; margin-bottom: 0.5rem; }
+        .log-type { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: bold; margin-left: 0.5rem; }
+        .log-type-page_load { background: #d4edda; color: #155724; }
+        .log-type-popup_triggered { background: #fff3cd; color: #856404; }
+        .log-type-conversion { background: #d1ecf1; color: #0c5460; }
         .log-type-uppage_track { background: #d1ecf1; color: #0c5460; }
         .log-type-error_log { background: #f8d7da; color: #721c24; }
+
+        .action-label { font-weight: 600; color: #495057; margin-top: 0.5rem; }
+        .action-details { font-size: 0.9rem; color: #6c757d; margin-top: 0.25rem; }
+
+        .empty-state { text-align: center; padding: 3rem; color: #6c757d; }
     </style>
 </head>
 <body>
@@ -951,30 +1012,153 @@ HTML;
 
     <div class="container">
         <div class="card">
-            <div class="card-header">最近追踪记录</div>
+            <div class="card-header">用户追踪数据</div>
             <div class="card-body">
-                <div id="tracking-data">加载中...</div>
+                <div class="tabs-container" id="tabs-container">
+                    <div class="empty-state">加载中...</div>
+                </div>
+                <div id="tab-contents"></div>
             </div>
         </div>
+        <div id="pagination-container"></div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            createPagination({
-                containerId: 'tracking-data',
-                apiUrl: '/admin/api/tracking',
-                perPage: 10,
-                emptyMessage: '暂无追踪数据',
-                renderItem: function(entry) {
-                    return `
-                        <div class="log-entry">
-                            <div class="log-timestamp">\${entry.timestamp}</div>
-                            <span class="log-type log-type-\${entry.type}">\${entry.type}</span>
-                            <pre style="margin-top: 0.5rem; white-space: pre-wrap;">\${JSON.stringify(entry.data, null, 2)}</pre>
-                        </div>
-                    `;
-                }
+        let currentPage = 1;
+        let sessionsData = [];
+
+        function getActionLabel(actionType, stockName) {
+            switch(actionType) {
+                case 'page_load':
+                    return '打开网站' + (stockName ? ' (' + stockName + ')' : '');
+                case 'popup_triggered':
+                    return '触发弹窗';
+                case 'conversion':
+                    return '用户产生转化';
+                default:
+                    return actionType;
+            }
+        }
+
+        function switchTab(sessionId) {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
             });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            const activeTab = document.querySelector('[data-session="' + sessionId + '"]');
+            const activeContent = document.getElementById('content-' + sessionId);
+
+            if (activeTab) activeTab.classList.add('active');
+            if (activeContent) activeContent.classList.add('active');
+        }
+
+        function loadTrackingData(page = 1) {
+            currentPage = page;
+
+            fetch('/admin/api/tracking?page=' + page + '&per_page=10')
+                .then(response => response.json())
+                .then(data => {
+                    sessionsData = data.sessions || [];
+
+                    if (sessionsData.length === 0) {
+                        document.getElementById('tabs-container').innerHTML = '<div class="empty-state">暂无追踪数据</div>';
+                        document.getElementById('tab-contents').innerHTML = '';
+                        document.getElementById('pagination-container').innerHTML = '';
+                        return;
+                    }
+
+                    let tabsHTML = '';
+                    let contentsHTML = '';
+
+                    sessionsData.forEach((session, index) => {
+                        const isActive = index === 0 ? 'active' : '';
+                        const sessionShort = session.session_id.substring(0, 8);
+
+                        tabsHTML += `
+                            <div class="tab \${isActive}" data-session="\${session.session_id}" onclick="switchTab('\${session.session_id}')">
+                                用户 \${sessionShort}
+                                <span class="tab-badge">\${session.behaviors.length}</span>
+                            </div>
+                        `;
+
+                        contentsHTML += `
+                            <div id="content-\${session.session_id}" class="tab-content \${isActive}">
+                                <div class="session-info">
+                                    <div class="session-info-item">
+                                        <span class="session-info-label">会话ID</span>
+                                        <span class="session-info-value">\${session.session_id}</span>
+                                    </div>
+                                    <div class="session-info-item">
+                                        <span class="session-info-label">IP地址</span>
+                                        <span class="session-info-value">\${session.ip || '未知'}</span>
+                                    </div>
+                                    <div class="session-info-item">
+                                        <span class="session-info-label">首次访问</span>
+                                        <span class="session-info-value">\${session.first_seen}</span>
+                                    </div>
+                                    <div class="session-info-item">
+                                        <span class="session-info-label">最后访问</span>
+                                        <span class="session-info-value">\${session.last_seen}</span>
+                                    </div>
+                                    <div class="session-info-item">
+                                        <span class="session-info-label">行为数量</span>
+                                        <span class="session-info-value">\${session.behaviors.length}</span>
+                                    </div>
+                                </div>
+                                <div class="behaviors-list">
+                                    \${session.behaviors.map(behavior => `
+                                        <div class="log-entry">
+                                            <div class="log-timestamp">\${behavior.timestamp}</div>
+                                            <span class="log-type log-type-\${behavior.action_type}">\${behavior.action_type}</span>
+                                            <div class="action-label">\${getActionLabel(behavior.action_type, behavior.stock_name)}</div>
+                                            \${behavior.stock_name ? '<div class="action-details">股票: ' + behavior.stock_name + (behavior.stock_code ? ' (' + behavior.stock_code + ')' : '') + '</div>' : ''}
+                                            \${behavior.url ? '<div class="action-details">URL: ' + behavior.url + '</div>' : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    document.getElementById('tabs-container').innerHTML = tabsHTML;
+                    document.getElementById('tab-contents').innerHTML = contentsHTML;
+
+                    renderPagination(data.page, data.total_pages);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('tabs-container').innerHTML = '<div class="empty-state">加载失败</div>';
+                });
+        }
+
+        function renderPagination(currentPage, totalPages) {
+            if (totalPages <= 1) {
+                document.getElementById('pagination-container').innerHTML = '';
+                return;
+            }
+
+            let paginationHTML = '<div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 1rem;">';
+
+            if (currentPage > 1) {
+                paginationHTML += '<button onclick="loadTrackingData(' + (currentPage - 1) + ')" style="padding: 0.5rem 1rem; cursor: pointer;">上一页</button>';
+            }
+
+            paginationHTML += '<span style="padding: 0.5rem 1rem;">第 ' + currentPage + ' / ' + totalPages + ' 页</span>';
+
+            if (currentPage < totalPages) {
+                paginationHTML += '<button onclick="loadTrackingData(' + (currentPage + 1) + ')" style="padding: 0.5rem 1rem; cursor: pointer;">下一页</button>';
+            }
+
+            paginationHTML += '</div>';
+
+            document.getElementById('pagination-container').innerHTML = paginationHTML;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTrackingData(1);
         });
     </script>
 </body>
