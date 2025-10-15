@@ -6,16 +6,20 @@ namespace App\Controllers;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use App\Utils\SupabaseClient;
 
 class TrackingController
 {
     private LoggerInterface $logger;
     private string $dataDir;
 
+    private SupabaseClient $supabase;
+
     public function __construct(LoggerInterface $logger)
     {
         $this->logger = $logger;
         $this->dataDir = __DIR__ . '/../../data';
+        $this->supabase = new SupabaseClient();
 
         if (!is_dir($this->dataDir)) {
             mkdir($this->dataDir, 0755, true);
@@ -52,6 +56,12 @@ class TrackingController
         $this->logger->info('User behavior tracking', $trackingData);
         $this->saveUserBehavior($trackingData);
 
+        try {
+            $this->supabase->insert('user_behaviors', $trackingData);
+        } catch (\Exception $e) {
+            $this->logger->error('Failed to save to Supabase', ['error' => $e->getMessage()]);
+        }
+
         $response->getBody()->write(json_encode([
             'status' => 'success',
             'message' => 'Tracking data recorded',
@@ -72,9 +82,19 @@ class TrackingController
         ];
 
         $this->logger->info('Up page tracking', $trackingData);
-        
-        // 这里可以保存到数据库
+
         $this->saveTrackingData('uppage_track', $trackingData);
+
+        try {
+            $this->supabase->insert('page_tracking', array_merge($trackingData, [
+                'url' => '',
+                'click_type' => 0,
+                'timezone' => '',
+                'language' => ''
+            ]));
+        } catch (\Exception $e) {
+            $this->logger->error('Failed to save page tracking to Supabase', ['error' => $e->getMessage()]);
+        }
 
         $response->getBody()->write(json_encode(['status' => 'success', 'message' => 'Up page tracking recorded']));
         return $response->withHeader('Content-Type', 'application/json');
@@ -99,8 +119,7 @@ class TrackingController
         ];
 
         $this->logger->error('Frontend error', $errorData);
-        
-        // 这里可以保存到数据库
+
         $this->saveTrackingData('error_log', $errorData);
 
         $response->getBody()->write(json_encode(['status' => 'success', 'message' => 'Error logged']));
@@ -151,30 +170,86 @@ class TrackingController
 
     public function getUserBehaviors(): array
     {
-        $file = $this->dataDir . '/user_behaviors.jsonl';
-        if (!file_exists($file)) {
-            return [];
-        }
+        try {
+            $result = $this->supabase->query('user_behaviors', [], 'created_at.desc', 1000, 0);
+            $behaviors = $result['data'];
 
-        $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        $behaviors = [];
-
-        foreach ($lines as $line) {
-            $data = json_decode($line, true);
-            if ($data) {
-                $behaviors[] = $data;
+            $groupedBySession = [];
+            foreach ($behaviors as $behavior) {
+                $sessionId = $behavior['session_id'];
+                if (!isset($groupedBySession[$sessionId])) {
+                    $groupedBySession[$sessionId] = [];
+                }
+                $groupedBySession[$sessionId][] = $behavior;
             }
-        }
 
-        $groupedBySession = [];
-        foreach ($behaviors as $behavior) {
-            $sessionId = $behavior['session_id'];
-            if (!isset($groupedBySession[$sessionId])) {
-                $groupedBySession[$sessionId] = [];
+            return $groupedBySession;
+        } catch (\Exception $e) {
+            $this->logger->error('Failed to get user behaviors from Supabase', ['error' => $e->getMessage()]);
+
+            $file = $this->dataDir . '/user_behaviors.jsonl';
+            if (!file_exists($file)) {
+                return [];
             }
-            $groupedBySession[$sessionId][] = $behavior;
-        }
 
-        return $groupedBySession;
+            $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            $behaviors = [];
+
+            foreach ($lines as $line) {
+                $data = json_decode($line, true);
+                if ($data) {
+                    $behaviors[] = $data;
+                }
+            }
+
+            $groupedBySession = [];
+            foreach ($behaviors as $behavior) {
+                $sessionId = $behavior['session_id'];
+                if (!isset($groupedBySession[$sessionId])) {
+                    $groupedBySession[$sessionId] = [];
+                }
+                $groupedBySession[$sessionId][] = $behavior;
+            }
+
+            return $groupedBySession;
+        }
+    }
+
+    public function getUserBehaviorsPaginated(int $page = 1, int $perPage = 10): array
+    {
+        try {
+            $offset = ($page - 1) * $perPage;
+
+            $sessions = $this->supabase->getAllSessions(1000, 0);
+            $totalSessions = count($sessions);
+            $paginatedSessions = array_slice($sessions, $offset, $perPage);
+
+            $result = [];
+            foreach ($paginatedSessions as $sessionId) {
+                $behaviors = $this->supabase->getUserBehaviorsBySession($sessionId);
+                $result[$sessionId] = $behaviors['data'];
+            }
+
+            return [
+                'data' => $result,
+                'pagination' => [
+                    'current_page' => $page,
+                    'per_page' => $perPage,
+                    'total' => $totalSessions,
+                    'total_pages' => (int)ceil($totalSessions / $perPage)
+                ]
+            ];
+        } catch (\Exception $e) {
+            $this->logger->error('Failed to get paginated user behaviors', ['error' => $e->getMessage()]);
+            return [
+                'data' => [],
+                'pagination' => [
+                    'current_page' => $page,
+                    'per_page' => $perPage,
+                    'total' => 0,
+                    'total_pages' => 0
+                ]
+            ];
+        }
     }
 }

@@ -1056,11 +1056,18 @@ HTML;
         $authResponse = $this->requireAuth($request, $response);
         if ($authResponse) return $authResponse;
 
+        $queryParams = $request->getQueryParams();
+        $page = isset($queryParams['page']) ? (int)$queryParams['page'] : 1;
+        $perPage = isset($queryParams['per_page']) ? (int)$queryParams['per_page'] : 10;
+
+        if ($page < 1) $page = 1;
+        if ($perPage < 1 || $perPage > 50) $perPage = 10;
+
         $trackingController = new TrackingController($this->logger);
-        $behaviors = $trackingController->getUserBehaviors();
+        $result = $trackingController->getUserBehaviorsPaginated($page, $perPage);
 
         $formattedBehaviors = [];
-        foreach ($behaviors as $sessionId => $actions) {
+        foreach ($result['data'] as $sessionId => $actions) {
             $sessionData = [
                 'session_id' => $sessionId,
                 'actions' => [],
@@ -1072,7 +1079,9 @@ HTML;
             ];
 
             usort($actions, function($a, $b) {
-                return strtotime($a['timestamp']) - strtotime($b['timestamp']);
+                $timeA = isset($a['timestamp']) ? $a['timestamp'] : ($a['created_at'] ?? '');
+                $timeB = isset($b['timestamp']) ? $b['timestamp'] : ($b['created_at'] ?? '');
+                return strtotime($timeA) - strtotime($timeB);
             });
 
             foreach ($actions as $action) {
@@ -1091,18 +1100,19 @@ HTML;
                         $actionLabel = $action['action_type'];
                 }
 
+                $timestamp = $action['timestamp'] ?? $action['created_at'] ?? '';
                 $sessionData['actions'][] = [
                     'type' => $action['action_type'],
                     'label' => $actionLabel,
-                    'timestamp' => $action['timestamp'],
+                    'timestamp' => $timestamp,
                     'stock_name' => $action['stock_name'] ?? '',
                     'stock_code' => $action['stock_code'] ?? ''
                 ];
             }
 
             if (!empty($actions)) {
-                $sessionData['first_action_time'] = $actions[0]['timestamp'];
-                $sessionData['last_action_time'] = $actions[count($actions) - 1]['timestamp'];
+                $sessionData['first_action_time'] = $actions[0]['timestamp'] ?? $actions[0]['created_at'] ?? '';
+                $sessionData['last_action_time'] = $actions[count($actions) - 1]['timestamp'] ?? $actions[count($actions) - 1]['created_at'] ?? '';
                 $sessionData['ip'] = $actions[0]['ip'] ?? '';
                 $sessionData['stock_name'] = $actions[0]['stock_name'] ?? '';
                 $sessionData['stock_code'] = $actions[0]['stock_code'] ?? '';
@@ -1115,7 +1125,12 @@ HTML;
             return strtotime($b['last_action_time']) - strtotime($a['last_action_time']);
         });
 
-        $response->getBody()->write(json_encode($formattedBehaviors));
+        $responseData = [
+            'data' => $formattedBehaviors,
+            'pagination' => $result['pagination']
+        ];
+
+        $response->getBody()->write(json_encode($responseData));
         return $response->withHeader('Content-Type', 'application/json');
     }
 
@@ -1180,6 +1195,42 @@ HTML;
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 30px;
+            padding: 20px 0;
+        }
+
+        .page-btn {
+            padding: 8px 16px;
+            border: 1px solid #dee2e6;
+            background: white;
+            color: #2c3e50;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .page-btn:hover {
+            background: #f8f9fa;
+            border-color: #3498db;
+        }
+
+        .page-btn.active {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+
+        .page-ellipsis {
+            padding: 8px 12px;
+            color: #95a5a6;
         }
 
         .user-session {
@@ -1367,14 +1418,25 @@ HTML;
                     <p>正在加载用户行为数据...</p>
                 </div>
             </div>
+            <div id="pagination-container"></div>
         </div>
     </div>
 
     <script>
-        function loadUserBehaviors() {
-            fetch('/admin/api/user-behaviors')
+        let currentPage = 1;
+        const perPage = 10;
+        let totalPages = 1;
+
+        function loadUserBehaviors(page = 1) {
+            currentPage = page;
+            fetch(`/admin/api/user-behaviors?page=${page}&per_page=${perPage}`)
                 .then(response => response.json())
-                .then(data => {
+                .then(result => {
+                    const data = result.data || [];
+                    const pagination = result.pagination || { current_page: 1, total: 0, total_pages: 1 };
+
+                    totalPages = pagination.total_pages;
+
                     if (data.length === 0) {
                         document.getElementById('behaviors-container').innerHTML = `
                             <div class="empty-state">
@@ -1397,10 +1459,10 @@ HTML;
                         });
                     });
 
-                    document.getElementById('total-sessions').textContent = data.length;
+                    document.getElementById('total-sessions').textContent = pagination.total;
                     document.getElementById('popup-count').textContent = popupCount;
                     document.getElementById('conversion-count').textContent = conversionCount;
-                    const rate = data.length > 0 ? ((conversionCount / data.length) * 100).toFixed(1) : 0;
+                    const rate = pagination.total > 0 ? ((conversionCount / pagination.total) * 100).toFixed(1) : 0;
                     document.getElementById('conversion-rate').textContent = rate + '%';
 
                     const container = document.getElementById('behaviors-container');
@@ -1456,6 +1518,8 @@ HTML;
                             </div>
                         `;
                     }).join('');
+
+                    renderPagination();
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -1467,8 +1531,53 @@ HTML;
                 });
         }
 
-        document.addEventListener('DOMContentLoaded', loadUserBehaviors);
-        setInterval(loadUserBehaviors, 30000);
+        function renderPagination() {
+            const paginationContainer = document.getElementById('pagination-container');
+            if (!paginationContainer) return;
+
+            if (totalPages <= 1) {
+                paginationContainer.innerHTML = '';
+                return;
+            }
+
+            let paginationHTML = '<div class="pagination">';
+
+            if (currentPage > 1) {
+                paginationHTML += `<button class="page-btn" onclick="loadUserBehaviors(${currentPage - 1})">上一页</button>`;
+            }
+
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+
+            if (startPage > 1) {
+                paginationHTML += `<button class="page-btn" onclick="loadUserBehaviors(1)">1</button>`;
+                if (startPage > 2) {
+                    paginationHTML += `<span class="page-ellipsis">...</span>`;
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                const activeClass = i === currentPage ? 'active' : '';
+                paginationHTML += `<button class="page-btn ${activeClass}" onclick="loadUserBehaviors(${i})">${i}</button>`;
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    paginationHTML += `<span class="page-ellipsis">...</span>`;
+                }
+                paginationHTML += `<button class="page-btn" onclick="loadUserBehaviors(${totalPages})">${totalPages}</button>`;
+            }
+
+            if (currentPage < totalPages) {
+                paginationHTML += `<button class="page-btn" onclick="loadUserBehaviors(${currentPage + 1})">下一页</button>`;
+            }
+
+            paginationHTML += '</div>';
+            paginationContainer.innerHTML = paginationHTML;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => loadUserBehaviors(1));
+        setInterval(() => loadUserBehaviors(currentPage), 30000);
     </script>
 </body>
 </html>
