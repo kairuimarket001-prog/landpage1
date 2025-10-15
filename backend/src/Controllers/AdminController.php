@@ -169,7 +169,11 @@ class AdminController
             return $response->withHeader('Content-Type', 'application/json')->withStatus(401);
         }
 
-        $trackingData = $this->loadTrackingData();
+        $queryParams = $request->getQueryParams();
+        $page = isset($queryParams['page']) ? max(1, (int)$queryParams['page']) : 1;
+        $perPage = isset($queryParams['per_page']) ? max(1, min(50, (int)$queryParams['per_page'])) : 10;
+
+        $trackingData = $this->loadTrackingDataPaginated($page, $perPage);
         $response->getBody()->write(json_encode($trackingData));
         return $response->withHeader('Content-Type', 'application/json');
     }
@@ -340,10 +344,10 @@ class AdminController
         if (!file_exists($file)) {
             return [];
         }
-        
+
         $lines = file($file, FILE_IGNORE_NEW_LINES);
         $data = [];
-        
+
         foreach (array_reverse(array_slice($lines, -100)) as $line) {
             if (preg_match('/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \[([^\]]+)\] (.+)$/', $line, $matches)) {
                 $data[] = [
@@ -353,8 +357,62 @@ class AdminController
                 ];
             }
         }
-        
+
         return $data;
+    }
+
+    private function loadTrackingDataPaginated(int $page, int $perPage): array
+    {
+        $file = $this->dataDir . '/../logs/tracking.log';
+        $trackingData = [];
+
+        if (file_exists($file)) {
+            $lines = file($file, FILE_IGNORE_NEW_LINES);
+            $lines = array_reverse($lines);
+
+            foreach ($lines as $line) {
+                if (preg_match('/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \[([^\]]+)\] (.+)$/', $line, $matches)) {
+                    $trackingData[] = [
+                        'timestamp' => $matches[1],
+                        'type' => $matches[2],
+                        'data' => json_decode($matches[3], true) ?: $matches[3]
+                    ];
+                }
+            }
+        }
+
+        $behaviorFile = $this->dataDir . '/user_behaviors.jsonl';
+        if (file_exists($behaviorFile)) {
+            $lines = file($behaviorFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            $lines = array_reverse($lines);
+
+            foreach ($lines as $line) {
+                $data = json_decode($line, true);
+                if ($data) {
+                    $trackingData[] = [
+                        'timestamp' => $data['timestamp'] ?? '',
+                        'type' => 'user_behavior',
+                        'data' => $data
+                    ];
+                }
+            }
+        }
+
+        usort($trackingData, function($a, $b) {
+            return strtotime($b['timestamp']) - strtotime($a['timestamp']);
+        });
+
+        $total = count($trackingData);
+        $offset = ($page - 1) * $perPage;
+        $paginatedData = array_slice($trackingData, $offset, $perPage);
+
+        return [
+            'data' => $paginatedData,
+            'page' => $page,
+            'per_page' => $perPage,
+            'total' => $total,
+            'total_pages' => (int)ceil($total / $perPage)
+        ];
     }
 
     private function loadAssignments(): array
@@ -857,6 +915,7 @@ HTML;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>追踪数据</title>
+    <script src="/static/js/pagination.js"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f8f9fa; }
         .navbar { background: #343a40; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; }
@@ -900,31 +959,23 @@ HTML;
     </div>
 
     <script>
-        function loadTrackingData() {
-            fetch('/admin/api/tracking')
-                .then(response => response.json())
-                .then(data => {
-                    const container = document.getElementById('tracking-data');
-                    if (data.length === 0) {
-                        container.innerHTML = '<p>暂无追踪数据</p>';
-                        return;
-                    }
-                    
-                    container.innerHTML = data.map(entry => `
+        document.addEventListener('DOMContentLoaded', function() {
+            createPagination({
+                containerId: 'tracking-data',
+                apiUrl: '/admin/api/tracking',
+                perPage: 10,
+                emptyMessage: '暂无追踪数据',
+                renderItem: function(entry) {
+                    return `
                         <div class="log-entry">
                             <div class="log-timestamp">\${entry.timestamp}</div>
                             <span class="log-type log-type-\${entry.type}">\${entry.type}</span>
                             <pre style="margin-top: 0.5rem; white-space: pre-wrap;">\${JSON.stringify(entry.data, null, 2)}</pre>
                         </div>
-                    `).join('');
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('tracking-data').innerHTML = '<p>加载失败</p>';
-                });
-        }
-
-        document.addEventListener('DOMContentLoaded', loadTrackingData);
+                    `;
+                }
+            });
+        });
     </script>
 </body>
 </html>
