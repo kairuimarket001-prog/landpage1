@@ -1,0 +1,380 @@
+﻿<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+  <title></title>
+  <meta name="robots" content="index,follow">
+  <meta name="color-scheme" content="light dark">
+  <style>
+    :root{
+      --bg:#f7f9fc; --card:#fff; --text:#1f2937; --muted:#6b7280;
+      --brand:#0ea5e9; --brand-2:#0284c7; --border:#e5e7eb; --shadow:0 18px 50px rgba(2,132,199,.12);
+      --success:#10b981; --ring:rgba(14,165,233,.25);
+    }
+    @media (prefers-color-scheme: dark){
+      :root{ --bg:#0b1220; --card:#0f172a; --text:#e5e7eb; --muted:#9ca3af; --border:#1f2a44; --shadow:0 18px 50px rgba(2,132,199,.25) }
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,Apple Color Emoji,Segoe UI Emoji;
+      background:
+        radial-gradient(700px 300px at 80% -10%, rgba(14,165,233,.18), transparent 60%),
+        radial-gradient(600px 260px at -10% 110%, rgba(16,185,129,.16), transparent 60%),
+        var(--bg);
+      color:var(--text); padding:24px;
+      display:flex; align-items:flex-start; justify-content:center;
+    }
+    .wrap{ width:min(920px,100%); }
+    .header{
+      display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px;
+    }
+    .brand{ display:flex; gap:12px; align-items:center; font-weight:800; letter-spacing:.2px; }
+    .logo{ width:38px; height:38px; border-radius:12px; background:conic-gradient(from 200deg,#7dd3fc,#a5b4fc,#34d399,#7dd3fc);
+      box-shadow:inset 0 0 0 3px rgba(255,255,255,.65), 0 10px 30px rgba(2,132,199,.25); }
+    .lang{ display:flex; gap:8px; flex-wrap:wrap; }
+    .lang button{
+      padding:8px 12px; border:1px solid var(--border); background:transparent; color:var(--text);
+      border-radius:10px; cursor:pointer; transition:.2s all; font-size:14px;
+    }
+    .lang button:hover,.lang button.active{ background:var(--card); border-color:var(--brand); box-shadow:0 8px 22px rgba(14,165,233,.12) }
+    .card{
+      background:var(--card); border:1px solid var(--border); box-shadow:var(--shadow); border-radius:16px; overflow:hidden;
+    }
+    .hero{ padding:26px 26px 10px 26px; display:grid; grid-template-columns:1.2fr .8fr; gap:18px; }
+    @media (max-width:860px){ .hero{ grid-template-columns:1fr } }
+    h1{ margin:0 0 8px 0; font-size:26px; }
+    p.lead{ margin:0; color:var(--muted); line-height:1.7 }
+    .meta{ display:flex; gap:16px; color:var(--muted); font-size:12px; margin-top:10px; flex-wrap:wrap; }
+    .illus{ padding:22px; display:flex; align-items:center; justify-content:center; }
+    .badge{
+      display:inline-flex; align-items:center; gap:8px; font-size:12px; color:#065f46; background:rgba(16,185,129,.12);
+      padding:6px 10px; border-radius:999px; border:1px solid rgba(16,185,129,.22); margin-bottom:10px;
+    }
+    .panel{
+      padding:14px 22px 24px 22px; display:grid; grid-template-columns:1fr 1fr; gap:12px;
+    }
+    @media (max-width:860px){ .panel{ grid-template-columns:1fr } }
+    .item{ border:1px dashed var(--border); border-radius:14px; padding:16px; }
+    .item h3{ margin:0 0 6px 0; font-size:16px }
+    .row{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    .mono{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace; background:rgba(148,163,184,.15); padding:6px 8px; border-radius:8px; }
+    .btn{
+      display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px;
+      background:var(--brand); color:#fff; text-decoration:none; border:1px solid var(--brand-2);
+      transition:.2s transform,.2s box-shadow; font-weight:600; font-size:14px;
+    }
+    .btn:hover{ transform:translateY(-1px); box-shadow:0 16px 40px rgba(2,132,199,.25) }
+    .ghost{
+      background:transparent; color:var(--text); border:1px solid var(--border); box-shadow:none;
+    }
+    .ghost:hover{ box-shadow:0 8px 22px rgba(14,165,233,.12); }
+    .copy{ cursor:pointer; border:1px solid var(--border); padding:8px 10px; border-radius:10px; background:transparent; }
+    .copy:focus{ outline:2px solid var(--ring) }
+    .footer{
+      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+      border-top:1px solid var(--border); padding:16px 22px; color:var(--muted); font-size:13px;
+    }
+    .link{ color:var(--brand-2); text-decoration:none; border-bottom:1px dashed var(--brand-2); }
+    .success{ color:var(--success); font-size:12px; margin-left:6px; display:none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <div id="t-brand">www.stockjp.co</div>
+          <small id="t-brand-sub" style="color:var(--muted)">Contact & Support</small>
+        </div>
+      </div>
+      <div class="lang" role="group" aria-label="Language Switcher">
+        <button data-lang="zh-TW">繁體</button>
+        <button data-lang="zh-CN">简体</button>
+        <button data-lang="ja">日本語</button>
+        <button data-lang="en">EN</button>
+        <button data-lang="de">DE</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="hero">
+        <div>
+          <div class="badge" id="t-badge">我們在這裡為您提供協助</div>
+          <h1 id="t-title">聯絡我們</h1>
+          <p class="lead" id="t-lead">
+            如您對本站資訊有任何問題、建議或合作意願，歡迎透過以下方式與我們聯絡。
+          </p>
+          <div class="meta">
+            <div>🏢 <span id="t-operator-label">營運單位</span> · <strong>www.stockjp.co</strong></div>
+            <div>🌐 <span id="t-domain"></span></div>
+            <div>⏱️ <span id="t-hours">回覆時間：工作日 10:00–18:00（本地時區）</span></div>
+          </div>
+        </div>
+        <div class="illus">
+          <!-- decorative only -->
+          <svg width="170" height="120" viewbox="0 0 200 140" aria-hidden="true">
+            <defs>
+              <lineargradient id="g1" x1="0" x2="1">
+                <stop offset="0" stop-color="#7dd3fc"></stop><stop offset="1" stop-color="#34d399"></stop>
+              </lineargradient>
+            </defs>
+            <rect x="12" y="18" rx="12" ry="12" width="176" height="104" fill="url(#g1)" opacity=".25"></rect>
+            <rect x="24" y="30" rx="10" ry="10" width="80" height="18" fill="url(#g1)" opacity=".55"></rect>
+            <rect x="24" y="56" rx="10" ry="10" width="152" height="12" fill="url(#g1)" opacity=".35"></rect>
+            <rect x="24" y="76" rx="10" ry="10" width="130" height="12" fill="url(#g1)" opacity=".35"></rect>
+            <circle cx="160" cy="40" r="10" fill="#67e8f9" opacity=".65"></circle>
+          </svg>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="item">
+          <h3 id="t-email-h">電子郵件</h3>
+          <div class="row">
+            <div class="mono" id="emailMono">support@</div>
+            <div>
+              <a id="emailBtn" class="btn" href="#">✉️ <span id="t-email-btn">發送郵件</span></a>
+              <button class="copy" id="copyEmail">📋 <span id="t-copy">複製</span></button>
+              <span class="success" id="copyEmailOk">✓</span>
+            </div>
+          </div>
+          <p class="lead" id="t-email-tip" style="margin-top:10px;color:var(--muted)">
+            建議在主旨中簡述需求，以便我們更快分類處理。
+          </p>
+        </div>
+
+        <div class="item">
+          <h3 id="t-site-h">網站</h3>
+          <div class="row">
+            <div class="mono" id="siteMono">https://</div>
+            <div>
+              <a id="siteBtn" class="btn ghost" href="../index.html" target="_blank" rel="noopener">🔗 <span id="t-open">開啟</span></a>
+              <button class="copy" id="copySite">📋 <span id="t-copy">複製</span></button>
+              <span class="success" id="copySiteOk">✓</span>
+            </div>
+          </div>
+          <p class="lead" id="t-site-tip" style="margin-top:10px;color:var(--muted)">
+            若您已建立工單，請附上工單編號以便對應。
+          </p>
+        </div>
+
+        <div class="item">
+          <h3 id="t-other-h">其他方式</h3>
+          <p id="t-other-p" style="color:var(--muted);margin:0 0 10px 0">
+            需要企業採購、合作或媒體聯繫？請來信說明主題與聯絡方式。
+          </p>
+          <a id="t-privacy-link" class="link" href="#" target="_blank" rel="noopener">隱私政策</a>
+        </div>
+
+        <div class="item">
+          <h3 id="t-faq-h">常見問題</h3>
+          <p id="t-faq-p" style="color:var(--muted);margin:0 0 10px 0">
+            我們彙整了收件規範與處理時程，建議您先行查看。
+          </p>
+          <a class="btn ghost" href="#" id="t-faq-btn">📘 檢視指南</a>
+        </div>
+      </div>
+
+      <div class="footer">
+        <div id="t-foot">感謝您的訊息，我們將盡速回覆。</div>
+        <a id="backHome" href="../index.html" class="link">返回首頁</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---- i18n dictionary ----
+    const I18N = {
+      "zh-TW":{
+        brand:"", brandSub:"聯絡與支援",
+        badge:"我們在這裡為您提供協助",
+        title:"聯絡我們",
+        lead:"如您對本站資訊有任何問題、建議或合作意願，歡迎透過以下方式與我們聯絡。",
+        operatorLabel:"營運單位",
+        hours:"回覆時間：工作日 10:00–18:00（本地時區）",
+        emailH:"電子郵件", emailBtn:"發送郵件", copy:"複製",
+        emailTip:"建議在主旨中簡述需求，以便我們更快分類處理。",
+        siteH:"網站", open:"開啟", siteTip:"若您已建立工單，請附上工單編號以便對應。",
+        otherH:"其他方式", otherP:"需要企業採購、合作或媒體聯繫？請來信說明主題與聯絡方式。",
+        privacy:"隱私政策",
+        faqH:"常見問題", faqP:"我們彙整了收件規範與處理時程，建議您先行查看。", faqBtn:"📘 檢視指南",
+        foot:"感謝您的訊息，我們將盡速回覆。", back:"返回首頁"
+      },
+      "zh-CN":{
+        brand:"", brandSub:"联系与支持",
+        badge:"我们在这里为您提供帮助",
+        title:"联系我们",
+        lead:"如您对本站信息有任何问题、建议或合作意向，欢迎通过以下方式与我们联系。",
+        operatorLabel:"运营单位",
+        hours:"回复时间：工作日 10:00–18:00（本地时区）",
+        emailH:"电子邮箱", emailBtn:"发送邮件", copy:"复制",
+        emailTip:"建议在主题中简述需求，便于我们快速分流处理。",
+        siteH:"网站", open:"打开", siteTip:"如已建立工单，请附上工单编号以便对接。",
+        otherH:"其他方式", otherP:"需要企业采购、合作或媒体联系？请邮件说明主题与联系方式。",
+        privacy:"隐私政策",
+        faqH:"常见问题", faqP:"我们整理了收件规范与处理时程，建议先行查看。", faqBtn:"📘 查看指南",
+        foot:"感谢您的来信，我们会尽快回复。", back:"返回首页"
+      },
+      "ja":{
+        brand:"", brandSub:"お問い合わせ・サポート",
+        badge:"私たちは常にサポートします",
+        title:"お問い合わせ",
+        lead:"ご質問・ご意見・ご提携のご相談は、以下の方法でお気軽にご連絡ください。",
+        operatorLabel:"運営",
+        hours:"対応時間：平日 10:00–18:00（現地時間）",
+        emailH:"メール", emailBtn:"メールを送る", copy:"コピー",
+        emailTip:"件名に要件を簡潔にご記載いただくと、迅速に振り分けできます。",
+        siteH:"ウェブサイト", open:"開く", siteTip:"チケット番号がある場合は併記ください。",
+        otherH:"その他の方法", otherP:"法人向けの購入・提携・メディア取材はメールでご相談ください。",
+        privacy:"プライバシーポリシー",
+        faqH:"よくある質問", faqP:"受付方針と対応目安をまとめています。事前の確認をおすすめします。", faqBtn:"📘 ガイドを見る",
+        foot:"メッセージありがとうございます。順次ご返信いたします。", back:"ホームへ戻る"
+      },
+      "en":{
+        brand:"", brandSub:"Contact & Support",
+        badge:"We’re here to help",
+        title:"Contact Us",
+        lead:"For questions, feedback, or partnership inquiries, please use the options below.",
+        operatorLabel:"Operator",
+        hours:"Response hours: Weekdays 10:00–18:00 (local time)",
+        emailH:"Email", emailBtn:"Send email", copy:"Copy",
+        emailTip:"Add a short subject to help us route your request faster.",
+        siteH:"Website", open:"Open", siteTip:"If you already have a ticket, include the ticket ID.",
+        otherH:"Other", otherP:"For enterprise purchasing, partnerships, or media, email us with your topic and contact details.",
+        privacy:"Privacy Policy",
+        faqH:"FAQ", faqP:"We compiled intake rules and timelines. Please review first.", faqBtn:"📘 View guide",
+        foot:"Thanks for your message — we’ll get back to you soon.", back:"Back to Home"
+      },
+      "de":{
+        brand:"", brandSub:"Kontakt & Support",
+        badge:"Wir helfen Ihnen gern",
+        title:"Kontakt",
+        lead:"Bei Fragen, Feedback oder Kooperationsanfragen nutzen Sie bitte die folgenden Optionen.",
+        operatorLabel:"Betreiber",
+        hours:"Antwortzeiten: Werktags 10:00–18:00 (Ortszeit)",
+        emailH:"E-Mail", emailBtn:"E-Mail senden", copy:"Kopieren",
+        emailTip:"Bitte einen kurzen Betreff angeben, damit wir schneller zuordnen können.",
+        siteH:"Webseite", open:"Öffnen", siteTip:"Falls bereits ein Ticket existiert, Ticket-ID angeben.",
+        otherH:"Weitere Optionen", otherP:"Für Unternehmenseinkauf, Partnerschaften oder Medienanfragen senden Sie uns bitte eine E-Mail mit Thema und Kontaktdaten.",
+        privacy:"Datenschutzerklärung",
+        faqH:"FAQ", faqP:"Wir haben Annahmerichtlinien und Zeitrahmen zusammengefasst. Bitte zuerst prüfen.", faqBtn:"📘 Leitfaden ansehen",
+        foot:"Vielen Dank für Ihre Nachricht. Wir melden uns zeitnah.", back:"Zur Startseite"
+      }
+    };
+
+    // ---- language detection & init ----
+    const qs = new URLSearchParams(location.search);
+    const paramLang = qs.get('lang');
+    const browserLang = (navigator.language || 'en').replace('_','-').toLowerCase();
+    function normalize(l){
+      if(!l) return 'en';
+      const s = l.toLowerCase();
+      if(s.startsWith('zh-tw')) return 'zh-TW';
+      if(s.startsWith('zh-cn') || s === 'zh') return 'zh-CN';
+      if(s.startsWith('ja')) return 'ja';
+      if(s.startsWith('de')) return 'de';
+      if(s.startsWith('en')) return 'en';
+      return 'en';
+    }
+    const LANG = normalize(paramLang) || normalize(browserLang);
+
+    // ---- dynamic domain & contacts ----
+    const DOMAIN = location.hostname || 'example.com';
+    const SUPPORT_EMAIL = `support@${DOMAIN}`;
+    const SITE_URL = `${location.protocol}//${DOMAIN}`;
+    const PRIVACY_URL = `${SITE_URL}/article/privacy?lang=${LANG}`; // 可指向你的隐私页
+
+    // ---- fill text ----
+    function tset(lang){
+      const T = I18N[lang] || I18N['en'];
+      document.documentElement.lang = lang;
+      document.title = `${T.title} | `;
+
+      // header
+      document.getElementById('t-brand').textContent = T.brand;
+      document.getElementById('t-brand-sub').textContent = T.brandSub;
+
+      // hero
+      document.getElementById('t-badge').textContent = T.badge;
+      document.getElementById('t-title').textContent = T.title;
+      document.getElementById('t-lead').textContent = T.lead;
+      document.getElementById('t-operator-label').textContent = T.operatorLabel;
+      document.getElementById('t-domain').textContent = DOMAIN;
+      document.getElementById('t-hours').textContent = T.hours;
+
+      // sections
+      document.getElementById('t-email-h').textContent = T.emailH;
+      document.getElementById('t-email-btn').textContent = T.emailBtn;
+      document.getElementById('t-copy').textContent = T.copy;
+      document.getElementById('t-email-tip').textContent = T.emailTip;
+
+      document.getElementById('t-site-h').textContent = T.siteH;
+      document.getElementById('t-open').textContent = T.open;
+      document.getElementById('t-site-tip').textContent = T.siteTip;
+
+      document.getElementById('t-other-h').textContent = T.otherH;
+      document.getElementById('t-other-p').textContent = T.otherP;
+      const pl = document.getElementById('t-privacy-link');
+      pl.textContent = T.privacy;
+      pl.href = PRIVACY_URL;
+
+      document.getElementById('t-faq-h').textContent = T.faqH;
+      document.getElementById('t-faq-p').textContent = T.faqP;
+      document.getElementById('t-faq-btn').textContent = T.faqBtn;
+
+      document.getElementById('t-foot').textContent = T.foot;
+      const back = document.getElementById('backHome');
+      back.textContent = T.back;
+
+      // dynamic values
+      document.getElementById('emailMono').textContent = SUPPORT_EMAIL;
+      document.getElementById('emailBtn').href = `mailto:${SUPPORT_EMAIL}`;
+      document.getElementById('siteMono').textContent = SITE_URL;
+      document.getElementById('siteBtn').href = SITE_URL;
+
+      // active lang button + update URLs tooltips
+      document.querySelectorAll('.lang button').forEach(b=>{
+        b.classList.toggle('active', b.dataset.lang===lang);
+        const url = new URL(location.href);
+        url.searchParams.set('lang', b.dataset.lang);
+        b.title = url.toString();
+      });
+    }
+
+    // copy helpers
+    function bindCopy(btnId, textGetter, okId){
+      const btn = document.getElementById(btnId);
+      const ok = document.getElementById(okId);
+      btn.addEventListener('click', async ()=>{
+        try{
+          await navigator.clipboard.writeText(textGetter());
+          ok.style.display = 'inline';
+          setTimeout(()=> ok.style.display='none', 1200);
+        }catch(e){ alert('Copy failed'); }
+      });
+    }
+
+    // init
+    tset(LANG);
+    // wire language buttons
+    document.querySelectorAll('.lang button').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const l = btn.dataset.lang;
+        const url = new URL(location.href);
+        url.searchParams.set('lang', l);
+        history.replaceState({}, "", url);
+        tset(l);
+      });
+    });
+
+    bindCopy('copyEmail', ()=> document.getElementById('emailMono').textContent, 'copyEmailOk');
+    bindCopy('copySite', ()=> document.getElementById('siteMono').textContent, 'copySiteOk');
+
+    // optional: guide link（指向站内某个说明页，当前回到首页）
+    document.getElementById('t-faq-btn').href = '/';
+  </script>
+</body>
+</html>

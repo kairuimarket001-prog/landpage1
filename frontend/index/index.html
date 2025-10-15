@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="金融リテラシー向上プログラム（教育目的）— 資産形成の基礎知識とリスクの理解を中立的に学ぶ。投資勧誘・投資助言は行いません。">
+    <title>金融教育センター | 金融リテラシー学習（投資勧誘ではありません）</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        /* 既存スタイルは変更していません（文言のみ更新） */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #2C5F7C;
+            --secondary-color: #47A8BD;
+            --accent-color: #E8922C;
+            --text-dark: #1A1A1A;
+            --text-gray: #4A5568;
+            --text-light: #718096;
+            --bg-light: #F7FAFC;
+            --bg-white: #FFFFFF;
+            --border-color: #E2E8F0;
+            --success-color: #48BB78;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        body {
+            font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.7;
+            color: var(--text-dark);
+            background-color: var(--bg-white);
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .header {
+            background-color: var(--bg-white);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            background-color: rgba(255, 255, 255, 0.95);
+        }
+
+        .navbar {
+            padding: 20px 0;
+        }
+
+        .navbar .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary-color);
+            letter-spacing: -0.5px;
+        }
+
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 32px;
+        }
+
+        .nav-menu a {
+            color: var(--text-gray);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .nav-menu a:hover {
+            color: var(--primary-color);
+        }
+
+        .hero-section {
+            padding: 80px 0 100px;
+            background: linear-gradient(135deg, #F7FAFC 0%, #EDF2F7 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(44, 95, 124, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 16px;
+            background-color: rgba(44, 95, 124, 0.1);
+            color: var(--primary-color);
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            letter-spacing: 0.5px;
+        }
+
+        .hero-title {
+            font-size: 48px;
+            font-weight: 700;
+            line-height: 1.2;
+            color: var(--text-dark);
+            margin-bottom: 24px;
+            letter-spacing: -1px;
+        }
+
+        .hero-description {
+            font-size: 18px;
+            line-height: 1.8;
+            color: var(--text-gray);
+            margin-bottom: 36px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            text-decoration: none;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary:hover {
+            background-color: #234B63;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: white;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .hero-visual {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .stats-card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: var(--shadow-xl);
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--primary-color);
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        .features-section {
+            padding: 100px 0;
+            background-color: var(--bg-white);
+        }
+
+        .section-header {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 60px;
+        }
+
+        .section-title {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 16px;
+            letter-spacing: -0.5px;
+        }
+
+        .section-subtitle {
+            font-size: 18px;
+            color: var(--text-gray);
+            line-height: 1.7;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+        }
+
+        .feature-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 36px 28px;
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-8px);
+            border-color: var(--secondary-color);
+        }
+
+        .feature-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .feature-icon svg {
+            width: 28px;
+            height: 28px;
+            color: white;
+        }
+
+        .feature-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 12px;
+        }
+
+        .feature-card p {
+            font-size: 15px;
+            color: var(--text-gray);
+            line-height: 1.7;
+        }
+
+        .curriculum-section {
+            padding: 100px 0;
+            background: var(--bg-light);
+        }
+
+        .curriculum-list {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .curriculum-item {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            gap: 32px;
+            align-items: start;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s;
+        }
+
+        .curriculum-item:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateX(8px);
+        }
+
+        .curriculum-number {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--secondary-color);
+            opacity: 0.3;
+            line-height: 1;
+        }
+
+        .curriculum-content h3 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 12px;
+        }
+
+        .curriculum-content>p {
+            font-size: 15px;
+            color: var(--text-gray);
+            margin-bottom: 16px;
+            line-height: 1.7;
+        }
+
+        .curriculum-points {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .curriculum-points li {
+            font-size: 14px;
+            color: var(--text-gray);
+            padding-left: 24px;
+            position: relative;
+        }
+
+        .curriculum-points li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--success-color);
+            font-weight: 700;
+        }
+
+        .principles-section {
+            padding: 100px 0;
+            background: white;
+        }
+
+        .principles-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .principles-content h2 {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 36px;
+            letter-spacing: -0.5px;
+        }
+
+        .principle-list {
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+
+        .principle-item {
+            display: flex;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .principle-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-color), #D97A1D);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .principle-text h4 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+
+        .principle-text p {
+            font-size: 15px;
+            color: var(--text-gray);
+            line-height: 1.7;
+        }
+
+        .principles-visual {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .testimonial-card {
+            background: var(--bg-light);
+            border-radius: 12px;
+            padding: 28px;
+            border-left: 4px solid var(--secondary-color);
+        }
+
+        .testimonial-text {
+            font-size: 15px;
+            color: var(--text-gray);
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .author-name {
+            font-weight: 700;
+            color: var(--text-dark);
+            font-size: 15px;
+        }
+
+        .author-role {
+            font-size: 13px;
+            color: var(--text-light);
+        }
+
+        .contact-section {
+            padding: 100px 0;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        }
+
+        .contact-card {
+            max-width: 700px;
+            margin: 0 auto;
+            text-align: center;
+            color: white;
+        }
+
+        .contact-header h2 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            letter-spacing: -0.5px;
+        }
+
+        .contact-header p {
+            font-size: 18px;
+            line-height: 1.7;
+            opacity: 0.95;
+            margin-bottom: 40px;
+        }
+
+        .contact-button {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .btn-contact {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 48px;
+            background: #06C755;
+            color: white;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 16px;
+            text-decoration: none;
+            box-shadow: 0 8px 20px rgba(6, 199, 85, 0.3);
+            transition: all 0.3s;
+        }
+
+        .btn-contact:hover {
+            background: #05B34C;
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(6, 199, 85, 0.4);
+        }
+
+        .icon-line {
+            width: 24px;
+            height: 24px;
+        }
+
+        .contact-note {
+            font-size: 13px;
+            opacity: 0.8;
+        }
+
+        .footer {
+            background-color: #1A202C;
+            color: white;
+            padding: 60px 0 32px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 60px;
+            margin-bottom: 40px;
+            padding-bottom: 40px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .footer-brand {
+            max-width: 400px;
+        }
+
+        .footer-logo {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: white;
+        }
+
+        .footer-brand p {
+            font-size: 14px;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .footer-links {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        .footer-column h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: white;
+        }
+
+        .footer-column ul {
+            list-style: none;
+        }
+
+        .footer-column li {
+            margin-bottom: 12px;
+        }
+
+        .footer-column a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .footer-column a:hover {
+            color: white;
+        }
+
+        .footer-disclaimer {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+
+        .footer-disclaimer h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--accent-color);
+        }
+
+        .footer-disclaimer p {
+            font-size: 13px;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 8px;
+        }
+
+        .footer-disclaimer p:last-child {
+            margin-bottom: 0;
+        }
+
+        .footer-bottom {
+            text-align: center;
+        }
+
+        .footer-bottom p {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        @media (max-width: 768px) {
+            .hero-grid {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .hero-title {
+                font-size: 36px;
+            }
+
+            .hero-description {
+                font-size: 16px;
+            }
+
+            .stats-card {
+                padding: 28px;
+                gap: 24px;
+            }
+
+            .stat-number {
+                font-size: 28px;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+
+            .curriculum-item {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .curriculum-number {
+                font-size: 32px;
+            }
+
+            .principles-grid {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .footer-links {
+                grid-template-columns: 1fr;
+                gap: 28px;
+            }
+
+            .nav-menu {
+                display: none;
+            }
+
+            .section-title {
+                font-size: 28px;
+            }
+
+            .contact-header h2 {
+                font-size: 28px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero-section {
+                padding: 60px 0;
+            }
+
+            .hero-title {
+                font-size: 28px;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .features-section,
+            .curriculum-section,
+            .principles-section,
+            .contact-section {
+                padding: 60px 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="container">
+                <div class="logo">金融教育センター</div>
+                <ul class="nav-menu">
+                    <li><a href="#about">プログラムについて</a></li>
+                    <li><a href="#curriculum">学習内容</a></li>
+                    <li><a href="#contact">お問い合わせ</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero-section">
+            <div class="container">
+                <div class="hero-grid">
+                    <div class="hero-content">
+                        <span class="badge">教育プログラム（投資勧誘ではありません）</span>
+                        <h1 class="hero-title">金融知識を<br>体系的に学び<br>未来に備える</h1>
+                        <p class="hero-description">資産形成の基礎とリスクの考え方を中立的に学び、事実に基づいて自ら判断するためのリテラシーを身につけましょう。</p>
+                        <div class="hero-buttons">
+                            <a href="#contact" class="btn btn-primary">無料学習相談を申し込む</a>
+                            <a href="#curriculum" class="btn btn-secondary">学習内容を見る</a>
+                        </div>
+                    </div>
+                    <div class="hero-visual">
+                        <div class="stats-card">
+                            <div class="stat-item">
+                                <div class="stat-number">1,200+</div>
+                                <div class="stat-label">受講者数（※当社調べ）</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number">15年</div>
+                                <div class="stat-label">教育運営（※累計）</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number">95%</div>
+                                <div class="stat-label">受講後アンケート満足度（※自社集計）</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label" style="font-size:12px;color:#718096;">※ 表示の数値は一定期間の集計に基づく参考値です。成果を保証するものではありません。</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="features-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-title">なぜ金融教育が必要なのか</h2>
+                    <p class="section-subtitle">変化する経済環境の中で、誤解を避けた知識と主体的な判断力が求められています</p>
+                </div>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                        <h3>基礎知識の習得</h3>
+                        <p>金融商品の基本概念や制度の枠組み、リスクとリターンの関係を中立的に学びます（推奨や勧誘は行いません）。</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                        <h3>リスク理解と管理</h3>
+                        <p>価格変動や元本割れの可能性を踏まえ、自分に合った資産形成の考え方を検討します（成果の保証はありません）。</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M13 10V3L4 14h7v7l9-11h-7z" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                        <h3>事例で学ぶ</h3>
+                        <p>ケーススタディやシミュレーションを通じて判断プロセスを確認します（投資成果を約束するものではありません）。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="curriculum" class="curriculum-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-title">段階的に学べるカリキュラム</h2>
+                    <p class="section-subtitle">初心者から経験者まで、中立的な視点で学べるプログラム</p>
+                </div>
+                <div class="curriculum-list">
+                    <div class="curriculum-item">
+                        <div class="curriculum-number">Step 1</div>
+                        <div class="curriculum-content">
+                            <h3>基礎コース</h3>
+                            <p>金融の基本用語や市場の仕組み、投資の種類など、判断の土台となる知識を整理します。</p>
+                            <ul class="curriculum-points">
+                                <li>金融市場の基礎理解</li>
+                                <li>投資商品の種類と特徴</li>
+                                <li>リスクとリターンの概念</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="curriculum-item">
+                        <div class="curriculum-number">Step 2</div>
+                        <div class="curriculum-content">
+                            <h3>分析コース</h3>
+                            <p>基本的な分析手法、企業・財務情報の見方、主要な経済指標の把握を進めます。</p>
+                            <ul class="curriculum-points">
+                                <li>基本的な分析手法の習得</li>
+                                <li>企業情報の読み解き方</li>
+                                <li>経済指標と市場の関係</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="curriculum-item">
+                        <div class="curriculum-number">Step 3</div>
+                        <div class="curriculum-content">
+                            <h3>実践コース</h3>
+                            <p>資産配分やリスク管理、長期的な資産形成の考え方をモデルケースで確認します（成果保証ではありません）。</p>
+                            <ul class="curriculum-points">
+                                <li>資産配分の考え方</li>
+                                <li>リスク管理の方法</li>
+                                <li>長期的視点による計画</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="curriculum-item">
+                        <div class="curriculum-number">Step 4</div>
+                        <div class="curriculum-content">
+                            <h3>継続学習</h3>
+                            <p>市場動向や制度変更などの最新情報をフォローし、知識の更新を行います。</p>
+                            <ul class="curriculum-points">
+                                <li>定期的な知識アップデート</li>
+                                <li>市場動向の確認</li>
+                                <li>学習に関する個別サポート</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="principles-section">
+            <div class="container">
+                <div class="principles-grid">
+                    <div class="principles-content">
+                        <h2>投資学習の基本方針</h2>
+                        <div class="principle-list">
+                            <div class="principle-item">
+                                <div class="principle-icon">01</div>
+                                <div class="principle-text">
+                                    <h4>教育第一</h4>
+                                    <p>特定の金融商品を推奨せず、判断力の向上を最優先にします。</p>
+                                </div>
+                            </div>
+                            <div class="principle-item">
+                                <div class="principle-icon">02</div>
+                                <div class="principle-text">
+                                    <h4>リスクの明示</h4>
+                                    <p>投資には元本割れ等のリスクが伴うことを明確にし、誤解を招く表現を避けます。</p>
+                                </div>
+                            </div>
+                            <div class="principle-item">
+                                <div class="principle-icon">03</div>
+                                <div class="principle-text">
+                                    <h4>長期的視点</h4>
+                                    <p>短期の成果を前提とせず、長期的な資産形成の考え方を重視します。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="principles-visual">
+                        <div class="testimonial-card">
+                            <p class="testimonial-text">「基礎から体系的に学べて、判断の拠り所が明確になりました。リスクの考え方を理解できたのが大きかったです。」</p>
+                            <div class="testimonial-author">
+                                <div class="author-info">
+                                    <div class="author-name">K.T様</div>
+                                    <div class="author-role">受講生</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="testimonial-card">
+                            <p class="testimonial-text">「段階的なカリキュラムで無理なく理解が進みました。中立的な説明で安心して学べました。」</p>
+                            <div class="testimonial-author">
+                                <div class="author-info">
+                                    <div class="author-name">M.S様</div>
+                                    <div class="author-role">受講生</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact" class="contact-section">
+            <div class="container">
+                <div class="contact-card">
+                    <div class="contact-header">
+                        <h2>まずは無料学習相談から</h2>
+                        <p>学習内容や受講方法のご案内専用窓口です。金融商品の勧誘や投資助言は行いません。</p>
+                    </div>
+                    <div class="contact-button">
+                        <a href="#" class="btn-contact" id="contactBtn">
+                            <svg class="icon-line" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629。629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608。391。082。923。258 1.058。590。120。301。079。766。038 1.080l-.164 1.02c-.045。301-.24 1.186 1.049。645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" />
+                            </svg>
+                            LINEで学習相談
+                        </a>
+                    </div>
+                    <p class="contact-note">※ ご返信まで2営業日ほどお時間をいただく場合があります</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="footer-logo">金融教育センター</div>
+                    <p>金融リテラシー向上を支援する教育プラットフォーム（投資勧誘・投資助言は行いません）</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>プログラム</h4>
+                        <ul>
+                            <li><a href="#about">教育方針</a></li>
+                            <li><a href="#curriculum">カリキュラム</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h4>サポート</h4>
+                        <ul>
+                            <li><a href="static/article/privacy.html?lang=ja">プライバシーセンター</a></li>
+                            <li><a href="static/article/disclaimer.html?lang=ja">免責事項</a></li>
+                            <li><a href="static/article/terms.html?lang=ja">利用規約</a></li>
+                            <li><a href="static/article/tokusyo.html?lang=ja">法令に基づく表示</a></li>
+                            <li><a href="static/article/contact.html?lang=ja">お問い合わせ</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-disclaimer">
+                <h4>広告表示に関する重要なお知らせ（重要事項）</h4>
+                <p>本サービスは金融リテラシー向上を目的とした教育サービスであり、特定の金融商品の購入や投資行動を推奨するものではありません。</p>
+                <p>投資には元本割れのリスクが伴います。投資判断はご自身の責任で行ってください。過去の実績は将来の成果を保証するものではありません。</p>
+                <p>金融商品取引業の登録が必要な投資助言・代理等の行為は行いません。</p>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 金融教育センター. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    <script>
+        // 既存スクリプトはそのまま（文言のみ更新）
+        document.addEventListener('DOMContentLoaded', function () {
+            const contactBtn = document.getElementById('contactBtn');
+
+            if (contactBtn) {
+                contactBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    console.log('Contact button clicked');
+                });
+            }
+
+            const smoothScroll = (target) => {
+                const element = document.querySelector(target);
+                if (element) {
+                    const headerOffset = 80;
+                    const elementPosition = element.getBoundingClientRect().top;
+                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                    });
+                }
+            };
+
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = this.getAttribute('href');
+                    if (target !== '#') {
+                        smoothScroll(target);
+                    }
+                });
+            });
+
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+
+            const animateElements = document.querySelectorAll('.feature-card, .curriculum-item, .testimonial-card');
+            animateElements.forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(30px)';
+                el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                observer.observe(el);
+            });
+
+            let lastScroll = 0;
+            const header = document.querySelector('.header');
+
+            window.addEventListener('scroll', () => {
+                const currentScroll = window.pageYOffset;
+
+                if (currentScroll <= 0) {
+                    header.style.boxShadow = 'none';
+                } else {
+                    header.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+                }
+
+                lastScroll = currentScroll;
+            });
+
+            const statNumbers = document.querySelectorAll('.stat-number');
+            const hasAnimated = new Set();
+
+            const animateNumber = (element) => {
+                if (hasAnimated.has(element)) return;
+
+                const text = element.textContent;
+                const number = parseInt(text.replace(/[^0-9]/g, ''));
+
+                if (isNaN(number)) return;
+
+                const suffix = text.replace(/[0-9]/g, '');
+                const duration = 2000;
+                const steps = 60;
+                const stepValue = number / steps;
+                let current = 0;
+
+                const timer = setInterval(() => {
+                    current += stepValue;
+                    if (current >= number) {
+                        element.textContent = number.toLocaleString() + suffix;
+                        clearInterval(timer);
+                    } else {
+                        element.textContent = Math.floor(current).toLocaleString() + suffix;
+                    }
+                }, duration / steps);
+
+                hasAnimated.add(element);
+            };
+
+            const numberObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        animateNumber(entry.target);
+                    }
+                });
+            }, { threshold: 0.5 });
+
+            statNumbers.forEach(stat => {
+                numberObserver.observe(stat);
+            });
+        });
+
+    </script>
+</body>
+
+</html>

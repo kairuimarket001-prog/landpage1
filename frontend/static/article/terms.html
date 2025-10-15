@@ -1,0 +1,310 @@
+﻿<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title></title>
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="index,follow">
+  <style>
+    :root{
+      --bg:#f6f8fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+      --brand:#2563eb; --brand-2:#1d4ed8; --border:#e5e7eb; --shadow:0 16px 50px rgba(0,0,0,.08);
+      --accent:#ef4444;
+    }
+    @media (prefers-color-scheme: dark){
+      :root{ --bg:#0b1220; --card:#0f172a; --text:#e5e7eb; --muted:#9aa3ad; --border:#1f2a44; --shadow:0 16px 50px rgba(0,0,0,.4) }
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:
+        radial-gradient(700px 300px at 80% -10%, rgba(37,99,235,.18), transparent 60%),
+        radial-gradient(600px 260px at -10% 110%, rgba(59,130,246,.12), transparent 60%),
+        var(--bg);
+      color:var(--text); font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial;
+      display:flex; align-items:flex-start; justify-content:center; padding:24px;
+    }
+    .wrap{ width:min(1100px,100%); }
+    header{
+      display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px;
+    }
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .logo{ width:38px; height:38px; border-radius:12px;
+      background:conic-gradient(from 200deg,#60a5fa,#a78bfa,#34d399,#60a5fa);
+      box-shadow:inset 0 0 0 3px rgba(255,255,255,.65), 0 10px 30px rgba(37,99,235,.22);
+    }
+    .title h1{ margin:0; font-size:24px }
+    .title small{ color:var(--muted) }
+    .lang{ display:flex; gap:8px; flex-wrap:wrap }
+    .lang button{
+      padding:8px 12px; border:1px solid var(--border); background:transparent; color:var(--text);
+      border-radius:10px; cursor:pointer; transition:.2s all; font-size:14px;
+    }
+    .lang button:hover,.lang button.active{ background:var(--card); border-color:var(--brand); box-shadow:0 8px 22px rgba(37,99,235,.12) }
+    .card{ background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); overflow:hidden }
+    .hero{ padding:24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap}
+    .badge{ font-size:12px; color:#1e3a8a; background:rgba(59,130,246,.15); padding:6px 10px; border-radius:999px; border:1px solid rgba(59,130,246,.25); }
+    .mono{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace }
+    h2{ margin:0 0 8px 0; font-size:18px; padding-left:10px; border-left:6px solid var(--brand) }
+    .body{ padding:18px 24px }
+    .grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px }
+    @media (max-width:900px){ .grid{ grid-template-columns:1fr } }
+    .sec{ border:1px dashed var(--border); border-radius:14px; padding:16px }
+    .sec p, .sec ul{ color:var(--muted); line-height:1.8; margin:0 }
+    .sec ul{ padding-left:18px; margin-top:6px }
+    .note{
+      margin-top:10px; padding:10px 12px; background:rgba(239,68,68,.08); border-left:4px solid var(--accent); border-radius:8px; color:var(--muted)
+    }
+    .footer{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 24px; border-top:1px solid var(--border) }
+    .btn{
+      display:inline-block; padding:12px 18px; border-radius:12px; text-decoration:none; background:var(--brand); color:#fff; border:1px solid var(--brand-2);
+      transition:.2s transform,.2s box-shadow; font-weight:600;
+    }
+    .btn:hover{ transform:translateY(-1px); box-shadow:0 16px 40px rgba(37,99,235,.25) }
+    .muted{ color:var(--muted) }
+
+    @media print{
+      body{ background:#fff; padding:0 }
+      .lang,.logo{ display:none }
+      .card{ box-shadow:none; border:none }
+      .sec{ border:none; padding:0 }
+      a[href]:after{ content:" (" attr(href) ")"; font-size:12px }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div class="title">
+          <h1 id="t-title">使用條款</h1>
+          <small class="muted"><span id="t-updated-label">最後更新</span> <span id="t-date">2025-09-03</span></small>
+        </div>
+      </div>
+      <div class="lang" role="group" aria-label="Language Switcher">
+        <button data-lang="zh-TW">繁體</button>
+        <button data-lang="zh-CN">简体</button>
+        <button data-lang="ja">日本語</button>
+        <button data-lang="en">EN</button>
+        <button data-lang="de">DE</button>
+      </div>
+    </header>
+
+    <div class="card" role="main">
+      <div class="hero">
+        <div class="badge" id="t-badge">本頁說明使用本網站與服務時的權利與義務</div>
+        <div class="muted">🌐 <span class="mono" id="t-domain"></span></div>
+      </div>
+
+      <div class="body">
+        <div class="grid">
+          <section class="sec" id="s-accept"><h2 id="h-accept">一、接受條款</h2><p id="p-accept"></p></section>
+          <section class="sec" id="s-use"><h2 id="h-use">二、使用規範</h2><ul id="ul-use"></ul></section>
+          <section class="sec" id="s-content"><h2 id="h-content">三、內容與資訊</h2><p id="p-content"></p><div class="note" id="note-invest"></div></section>
+          <section class="sec" id="s-warranty"><h2 id="h-warranty">四、無保證聲明</h2><p id="p-warranty"></p></section>
+          <section class="sec" id="s-liability"><h2 id="h-liability">五、責任限制</h2><p id="p-liability"></p></section>
+          <section class="sec" id="s-ip"><h2 id="h-ip">六、智慧財產權</h2><p id="p-ip"></p></section>
+          <section class="sec" id="s-links"><h2 id="h-links">七、第三方連結</h2><p id="p-links"></p></section>
+          <section class="sec" id="s-changes"><h2 id="h-changes">八、條款變更</h2><p id="p-changes"></p></section>
+          <section class="sec" id="s-law"><h2 id="h-law">九、準據法與爭議</h2><p id="p-law"></p></section>
+          <section class="sec" id="s-contact"><h2 id="h-contact">十、聯絡方式</h2><p id="p-contact"></p></section>
+        </div>
+      </div>
+
+      <div class="footer">
+        <a href="../index.html" class="btn" id="t-back">返回首頁</a>
+        <span class="muted" id="t-foot">若您不同意本條款，請停止使用本網站與服務。</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // -------- runtime --------
+    const DOMAIN = location.hostname || 'example.com';
+    const SUPPORT = `support@${DOMAIN}`;
+
+    // -------- i18n --------
+    const I18N = {
+      "zh-TW":{
+        updatedLabel:"最後更新",
+        title:"使用條款", badge:"本頁說明使用本網站與服務時的權利與義務",
+        headings:["一、接受條款","二、使用規範","三、內容與資訊","四、無保證聲明","五、責任限制","六、智慧財產權","七、第三方連結","八、條款變更","九、準據法與爭議","十、聯絡方式"],
+        accept:"您使用或存取本網站（{domain}）即表示您同意受本使用條款與所有適用法規之拘束；若您不同意，請勿使用。",
+        use:[
+          "不得以任何方式干擾網站運作或進行未授權存取。",
+          "不得違反法令、侵害第三人權利或散布惡意程式。",
+          "帳號與密碼由您自行保管，因保管不善所致之風險由您自負。"
+        ],
+        content:"本網站提供之資訊僅供一般參考之用，可能因時間差、第三方來源或技術因素而存在錯誤、遺漏或延遲。",
+        investNote:"投資有風險，過去績效不代表未來結果；本文不構成任何投資建議、邀約或保證獲利。",
+        warranty:"網站與其內容以「現狀」與「可得」基礎提供；我們不就其正確性、可靠性、可用性或特定目的適用性為任何明示或默示之保證。",
+        liability:"在法律允許範圍內，我們對於任何間接、附隨、特殊、衍生或懲罰性損害概不負責；對直接損害之總額以您於十二個月內為本服務所支付之費用為上限（若為免費服務則為新臺幣 0 元）。",
+        ip:"除另有標示外，網站之所有內容、標誌、程式碼與設計均受著作權與相關法令保護；未經授權不得使用、重製、散布或建立衍生作品。",
+        links:"本網站可能包含第三方網站連結；該等網站由各自負責，其內容與做法與我們無關。",
+        changes:"我們可於合理情形下更新本條款；重大變更將於頁面公告。更新後您持續使用即視為同意修訂內容。",
+        law:"本條款受您主要營運地或我們註冊地之法律所規範；若有爭議，應以該地法院為第一審管轄（不得排除消費者保護法之強制規定）。",
+        contact:`如對條款有疑問，請寄信至：${SUPPORT}。`,
+        back:"返回首頁", foot:"若您不同意本條款，請停止使用本網站與服務。"
+      },
+      "zh-CN":{
+        updatedLabel:"最后更新",
+        title:"使用条款", badge:"本页说明使用本网站与服务时的权利义务",
+        headings:["一、接受条款","二、使用规范","三、内容与信息","四、无保证声明","五、责任限制","六、知识产权","七、第三方链接","八、条款变更","九、准据法与争议","十、联系方式"],
+        accept:"您访问或使用本网站（{domain}）即表示同意受本使用条款及适用法律的约束；如不同意，请勿使用。",
+        use:[
+          "不得干扰网站运行或进行未授权访问。",
+          "不得违反法律、侵犯他人权利或传播恶意程序。",
+          "账号与密码需妥善保管，由此产生的风险由您自行承担。"
+        ],
+        content:"本网站信息仅供一般参考，可能因时间差、第三方来源或技术因素存在错误、遗漏或延迟。",
+        investNote:"投资有风险，过往业绩不代表未来结果；本文不构成任何投资建议、邀约或收益保证。",
+        warranty:"网站与内容按“现状/可得”提供；我们不对其准确性、可靠性、可用性或适用性作任何明示或默示保证。",
+        liability:"在法律允许范围内，我们对任何间接、附带、特殊、衍生或惩罚性损害不承担责任；对直接损害的总额以上一十二个月您为本服务支付的费用为上限（免费服务则为人民币 0 元）。",
+        ip:"除另有标示外，网站内容、标识、代码与设计受著作权等法律保护；未经授权不得使用、复制、分发或创建衍生作品。",
+        links:"本网站可能包含第三方链接；其内容与做法由相应网站自行负责，与我们无关。",
+        changes:"我们可能在合理情况下更新本条款；重大变更将于页面公告。更新后继续使用即视为同意。",
+        law:"本条款适用您主要经营地或我们注册地的法律；争议由该地法院管辖（不影响消费者强制性权利）。",
+        contact:`如有疑问，请发送邮件至：${SUPPORT}。`,
+        back:"返回首页", foot:"若您不同意本条款，请停止使用本网站与服务。"
+      },
+      "ja":{
+        updatedLabel:"最終更新",
+        title:"利用規約", badge:"本ページは本サイト/サービス利用時の権利と義務を示します",
+        headings:["1) 受諾","2) ご利用条件","3) コンテンツと情報","4) 免責（保証なし）","5) 責任の制限","6) 知的財産","7) 外部リンク","8) 規約の変更","9) 準拠法・裁判管轄","10) 連絡先"],
+        accept:"本サイト（{domain}）を利用・閲覧した時点で、本規約および適用法令に同意したものとみなします。不同意の場合は利用を中止してください。",
+        use:[
+          "サイト運営を妨害したり、無断アクセスを行わないこと。",
+          "法令違反、第三者の権利侵害、マルウェア配布を行わないこと。",
+          "アカウント・パスワードは自己責任で管理してください。"
+        ],
+        content:"本サイトの情報は一般的な参考情報であり、時間差や第三者ソース等により誤り・遅延・欠落が生じる場合があります。",
+        investNote:"投資にはリスクが伴い、過去の実績は将来の成果を保証しません。本内容は投資助言・勧誘・利益保証を目的とするものではありません。",
+        warranty:"本サイトおよび内容は「現状有姿」「提供可能な範囲」で提供されます。正確性・信頼性・有用性・特定目的適合性について、明示または黙示の保証を行いません。",
+        liability:"法令で許される範囲で、間接的・付随的・特別・結果的・懲罰的損害について当社は責任を負いません。直接損害の総額は直近12か月に当サービスへ支払われた金額を上限とします（無料サービスは0円）。",
+        ip:"特段の表示がない限り、本サイトのコンテンツ・ロゴ・コード・デザインは知的財産として保護されています。無断利用・複製・配布・派生物の作成は禁止です。",
+        links:"第三者サイトへのリンクが含まれる場合があります。当該サイトの内容や方針について当社は責任を負いません。",
+        changes:"合理的な範囲で本規約を更新します。重要な変更は本ページで告知し、以降の利用は改定後規約への同意を意味します。",
+        law:"本規約は、お客様の主たる事業地または当社の登録地の法令に準拠します。紛争は当該地の裁判所を第一審の専属的合意管轄とします（消費者保護の強行規定は除外されません）。",
+        contact:`ご不明点は ${SUPPORT} までご連絡ください。`,
+        back:"ホームへ戻る", foot:"本規約に同意いただけない場合、利用を中止してください。"
+      },
+      "en":{
+        updatedLabel:"Last updated",
+        title:"Terms of Use", badge:"This page explains rights and obligations when using our Site/Services",
+        headings:["1) Acceptance","2) Acceptable Use","3) Content & Information","4) No Warranties","5) Limitation of Liability","6) Intellectual Property","7) Third-Party Links","8) Changes to Terms","9) Governing Law & Venue","10) Contact"],
+        accept:"By accessing or using this Site ({domain}), you agree to be bound by these Terms and all applicable laws. If you do not agree, do not use the Services.",
+        use:[
+          "Do not interfere with operation or attempt unauthorized access.",
+          "Do not violate laws, infringe rights, or distribute malware.",
+          "You are responsible for safeguarding your account credentials."
+        ],
+        content:"Information on this Site is for general informational purposes and may contain errors, omissions, or delays due to timing, third-party sources, or technical factors.",
+        investNote:"Investing involves risk. Past performance is not indicative of future results. Nothing herein constitutes investment advice, an offer, or a guarantee of profit.",
+        warranty:"The Site and content are provided “as is” and “as available” without warranties of any kind, express or implied, including accuracy, reliability, availability, or fitness for a particular purpose.",
+        liability:"To the maximum extent permitted by law, we are not liable for any indirect, incidental, special, consequential, or punitive damages. Our aggregate liability for direct damages is limited to the fees you paid for the Services in the preceding 12 months (or $0 for free Services).",
+        ip:"Unless otherwise noted, all content, logos, code, and design are protected by intellectual property laws. You may not use, copy, distribute, or create derivative works without authorization.",
+        links:"Links to third-party sites may be provided. We are not responsible for their content or practices.",
+        changes:"We may update these Terms where reasonable. Material changes will be announced on this page. Continued use after updates constitutes acceptance.",
+        law:"These Terms are governed by the laws of your principal place of business or our place of registration. Courts there will have jurisdiction, without limiting mandatory consumer protections.",
+        contact:`Questions? Email us at ${SUPPORT}.`,
+        back:"Back to Home", foot:"If you do not agree, please stop using the Site and Services."
+      },
+      "de":{
+        updatedLabel:"Zuletzt aktualisiert",
+        title:"Nutzungsbedingungen", badge:"Diese Seite erläutert Rechte und Pflichten bei der Nutzung unserer Website/Dienste",
+        headings:["1) Zustimmung","2) Zulässige Nutzung","3) Inhalte & Informationen","4) Ohne Gewähr","5) Haftungsbeschränkung","6) Geistiges Eigentum","7) Links von Dritten","8) Änderungen","9) Anwendbares Recht & Gerichtsstand","10) Kontakt"],
+        accept:"Durch den Zugriff auf diese Website ({domain}) erklären Sie sich mit diesen Bedingungen einverstanden. Wenn nicht, nutzen Sie die Dienste bitte nicht.",
+        use:[
+          "Den Betrieb nicht stören und keinen unbefugten Zugriff versuchen.",
+          "Keine Gesetze verletzen, Rechte Dritter beeinträchtigen oder Malware verbreiten.",
+          "Sie sind für den Schutz Ihrer Zugangsdaten verantwortlich."
+        ],
+        content:"Informationen auf dieser Website dienen nur allgemeinen Informationszwecken und können Fehler, Auslassungen oder Verzögerungen enthalten.",
+        investNote:"Investitionen sind mit Risiken verbunden. Vergangene Ergebnisse sind kein Indikator für künftige. Dies stellt keine Anlageberatung, kein Angebot und keine Gewinnzusage dar.",
+        warranty:"Website und Inhalte werden „wie besehen“ und „verfügbar“ bereitgestellt – ohne ausdrückliche oder stillschweigende Garantien.",
+        liability:"Soweit gesetzlich zulässig haften wir nicht für indirekte, beiläufige, besondere, Folgeschäden oder Strafschadensersatz. Die Gesamthaftung für direkte Schäden ist auf die in den letzten 12 Monaten gezahlten Gebühren begrenzt (bei kostenlosen Diensten: 0 €).",
+        ip:"Sofern nicht anders angegeben, sind Inhalte, Logos, Code und Design urheberrechtlich geschützt. Unbefugte Nutzung, Vervielfältigung oder Verbreitung ist untersagt.",
+        links:"Es können Links zu Websites Dritter enthalten sein; für deren Inhalte/Praktiken übernehmen wir keine Verantwortung.",
+        changes:"Wir können diese Bedingungen in angemessenem Umfang aktualisieren; wesentliche Änderungen werden hier bekannt gegeben. Ihre weitere Nutzung gilt als Zustimmung.",
+        law:"Es gilt das Recht Ihres Hauptgeschäftssitzes oder unseres Registersitzes; zuständig sind die dortigen Gerichte (zwingende Verbraucherschutzrechte bleiben unberührt).",
+        contact:`Fragen? Schreiben Sie an ${SUPPORT}.`,
+        back:"Zur Startseite", foot:"Wenn Sie nicht einverstanden sind, nutzen Sie die Website bitte nicht weiter."
+      }
+    };
+
+    // -------- helpers --------
+    function normalize(l){
+      if(!l) return null;
+      const s = l.toLowerCase();
+      if(['zh-tw','tw','zhtw'].includes(s)) return 'zh-TW';
+      if(['zh-cn','cn','zh'].includes(s)) return 'zh-CN';
+      if(s.startsWith('ja')||['jp','jpn'].includes(s)) return 'ja';
+      if(s.startsWith('de')) return 'de';
+      if(s.startsWith('en')) return 'en';
+      return null;
+    }
+    function setList(id, arr){
+      const ul=document.getElementById(id); ul.innerHTML='';
+      arr.forEach(t=>{ const li=document.createElement('li'); li.textContent=t; ul.appendChild(li); });
+    }
+    function setTexts(T, lang){
+      document.documentElement.lang = lang;
+      document.title = T.title;
+      // header
+      document.getElementById('t-title').textContent = T.title;
+      document.getElementById('t-updated-label').textContent = T.updatedLabel;
+      document.getElementById('t-badge').textContent = T.badge;
+      document.getElementById('t-domain').textContent = DOMAIN;
+      // headings
+      const ids=['h-accept','h-use','h-content','h-warranty','h-liability','h-ip','h-links','h-changes','h-law','h-contact'];
+      ids.forEach((id,i)=>{ document.getElementById(id).textContent = T.headings[i]; });
+      // paragraphs
+      document.getElementById('p-accept').textContent = T.accept.replace('{domain}', DOMAIN);
+      setList('ul-use', T.use);
+      document.getElementById('p-content').textContent = T.content;
+      document.getElementById('note-invest').textContent = T.investNote;
+      document.getElementById('p-warranty').textContent = T.warranty;
+      document.getElementById('p-liability').textContent = T.liability;
+      document.getElementById('p-ip').textContent = T.ip;
+      document.getElementById('p-links').textContent = T.links;
+      document.getElementById('p-changes').textContent = T.changes;
+      document.getElementById('p-law').textContent = T.law;
+      document.getElementById('p-contact').textContent = T.contact;
+      // footer
+      document.getElementById('t-back').textContent = T.back;
+      document.getElementById('t-foot').textContent = T.foot;
+    }
+
+    // -------- init --------
+    const qs = new URLSearchParams(location.search);
+    const stored = localStorage.getItem('terms_lang');
+    const wanted = normalize(qs.get('lang')) || normalize(stored) || normalize((navigator.language||'').replace('_','-')) || 'zh-TW';
+    const T = I18N[wanted] || I18N['zh-TW'];
+    setTexts(T, wanted);
+
+    // updated date override
+    const updated = qs.get('updated');
+    if(updated && /^\d{4}-\d{2}-\d{2}$/.test(updated)) {
+      document.getElementById('t-date').textContent = updated;
+    }
+
+    // active state + persist + URL hint
+    document.querySelectorAll('.lang button').forEach(b=>{
+      b.classList.toggle('active', b.dataset.lang===wanted);
+      const url = new URL(location.href); url.searchParams.set('lang', b.dataset.lang); b.title = url.toString();
+      b.addEventListener('click', ()=>{
+        const l = b.dataset.lang;
+        localStorage.setItem('terms_lang', l);
+        const T2 = I18N[l] || I18N['zh-TW'];
+        history.replaceState({}, "", (()=>{
+          const u = new URL(location.href); u.searchParams.set('lang', l); return u.toString();
+        })());
+        setTexts(T2, l);
+        document.querySelectorAll('.lang button').forEach(x=>x.classList.toggle('active', x===b));
+      });
+    });
+  </script>
+</body>
+</html>

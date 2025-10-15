@@ -1,0 +1,615 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Privacy Policy</title>
+  <meta name="robots" content="index,follow">
+  <meta name="color-scheme" content="light dark">
+  <style>
+    :root{
+      --bg:#f6f8fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+      --brand:#2563eb; --brand-2:#1d4ed8; --border:#e5e7eb; --shadow:0 20px 60px rgba(0,0,0,.08);
+      --success:#10b981; --danger:#ef4444;
+    }
+    @media (prefers-color-scheme: dark){
+      :root{ --bg:#0b1220; --card:#0f172a; --text:#e5e7eb; --muted:#9ca3af; --border:#1f2a44; --shadow:0 12px 40px rgba(0,0,0,.5); }
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,Apple Color Emoji,Segoe UI Emoji;
+      background:linear-gradient(140deg,var(--bg) 0%, #eef2ff 60%, var(--bg) 100%);
+      color:var(--text); display:flex; align-items:flex-start; justify-content:center; padding:24px;
+    }
+    .wrap{width:min(1000px,100%);}
+    .header{
+      display:flex; gap:12px; align-items:center; justify-content:space-between; margin-bottom:20px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:12px; font-weight:800; letter-spacing:.2px;
+    }
+    .logo{
+      width:38px; height:38px; border-radius:12px; background:conic-gradient(from 200deg at 50% 50%, #60a5fa, #a78bfa, #34d399, #60a5fa);
+      box-shadow:inset 0 0 0 3px rgba(255,255,255,.6), 0 10px 30px rgba(99,102,241,.25);
+    }
+    .lang{display:flex; gap:8px; flex-wrap:wrap;}
+    .lang button{
+      padding:8px 12px; border:1px solid var(--border); background:transparent; color:var(--text);
+      border-radius:10px; cursor:pointer; transition:.2s all; font-size:14px;
+    }
+    .lang button.active, .lang button:hover{ background:var(--card); border-color:var(--brand); box-shadow:0 6px 18px rgba(37,99,235,.12)}
+    .card{
+      background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); overflow:hidden;
+    }
+    .hero{
+      padding:28px 28px 6px 28px; display:grid; grid-template-columns:1.2fr .8fr; gap:20px;
+    }
+    @media (max-width:900px){ .hero{grid-template-columns:1fr} }
+    h1{margin:0 0 10px 0; font-size:28px}
+    p.lead{margin:0; color:var(--muted); line-height:1.7}
+    .badge{
+      display:inline-flex; align-items:center; gap:8px; font-size:12px; color:#065f46; background:rgba(16,185,129,.12);
+      padding:6px 10px; border-radius:999px; border:1px solid rgba(16,185,129,.22); margin-bottom:10px;
+    }
+    .meta{
+      display:flex; gap:18px; color:var(--muted); font-size:12px; margin-top:12px; flex-wrap:wrap;
+    }
+    .illus{
+      padding:28px; display:flex; align-items:center; justify-content:center;
+      background:
+       radial-gradient(600px 220px at 80% -20%, rgba(59,130,246,.25), transparent 60%),
+       radial-gradient(400px 200px at -10% 120%, rgba(16,185,129,.20), transparent 60%);
+    }
+    .shield{
+      width:180px; aspect-ratio:1/1; border-radius:24px;
+      background:
+        conic-gradient(from 140deg at 50% 50%, #dbeafe, #ecfeff, #e9d5ff, #dcfce7, #dbeafe);
+      border:6px solid rgba(255,255,255,.5); box-shadow:0 30px 80px rgba(37,99,235,.25);
+      position:relative;
+    }
+    .shield::after{
+      content:""; position:absolute; inset:18px; border-radius:18px; backdrop-filter:blur(6px);
+      background:linear-gradient(180deg, rgba(255,255,255,.45), rgba(255,255,255,.08));
+      border:1px solid rgba(255,255,255,.5);
+    }
+    .sections{ padding:10px 24px 24px 24px; display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+    @media (max-width:900px){ .sections{grid-template-columns:1fr} }
+    .sec{ background:var(--card); border:1px dashed var(--border); border-radius:14px; padding:18px }
+    .sec h3{ margin:0 0 8px 0; font-size:18px }
+    .sec p, .sec ul{ color:var(--muted); line-height:1.75; margin:0 }
+    .sec ul{ padding-left:18px; margin-top:6px }
+    .footer{
+      display:flex; align-items:center; justify-content:space-between; padding:18px 24px; border-top:1px solid var(--border);
+      gap:12px; flex-wrap:wrap;
+    }
+    .btn{
+      display:inline-block; padding:12px 18px; border-radius:12px; text-decoration:none; text-align:center;
+      background:var(--brand); color:#fff; border:1px solid var(--brand-2); transition:.2s transform, .2s box-shadow; font-weight:600;
+    }
+    .btn:hover{ transform:translateY(-2px); box-shadow:0 18px 40px rgba(37,99,235,.25) }
+    .muted{ color:var(--muted) }
+    .domain{ color:var(--brand); font-weight:700 }
+    /* small helper for mono parts */
+    code{background:rgba(148,163,184,.16); padding:2px 6px; border-radius:6px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <div id="t-brand">Privacy Center</div>
+          <small class="muted" id="t-brand-sub">Unified policy across products</small>
+        </div>
+      </div>
+      <div class="lang" role="group" aria-label="Language Switcher">
+        <button data-lang="en">EN</button>
+        <button data-lang="zh-TW">繁體</button>
+        <button data-lang="zh-CN">简体</button>
+        <button data-lang="ja">日本語</button>
+        <button data-lang="de">DE</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="hero">
+        <div>
+          <div class="badge" id="t-badge">We respect your privacy</div>
+          <h1 id="t-title">Privacy Policy</h1>
+          <p class="lead" id="t-lead">
+            This policy explains what data we collect, how we use it, and the choices you have.
+          </p>
+          <div class="meta">
+            <div>🌐 <span id="t-domain" class="domain"></span></div>
+            <div>📅 <span id="t-updated-label">Last updated</span> · <span id="t-updated-date">2025-09-03</span></div>
+            <div>⚖️ <span id="t-legal">Compliant with applicable laws</span></div>
+          </div>
+        </div>
+        <div class="illus">
+          <div class="shield" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <div class="sections">
+        <section class="sec">
+          <h3 id="t-overview-h">1) Overview</h3>
+          <p id="t-overview-p"></p>
+        </section>
+
+        <section class="sec">
+          <h3 id="t-what-h">2) Data We Collect</h3>
+          <ul id="t-what-ul"></ul>
+        </section>
+
+        <section class="sec">
+          <h3 id="t-why-h">3) How & Why We Use Data</h3>
+          <ul id="t-why-ul"></ul>
+        </section>
+
+        <section class="sec">
+          <h3 id="t-legal-h">4) Legal Bases</h3>
+          <ul id="t-legal-ul"></ul>
+        </section>
+
+        <section class="sec">
+          <h3 id="t-cookie-h">5) Cookies & Similar Tech</h3>
+          <p id="t-cookie-p"></p>
+        </section>
+
+        <section class="sec">
+          <h3 id="t-retention-h">6) Retention</h3>
+          <p id="t-retention-p"></p>
+        </section>
+
+        <section class="sec">
+          <h3 id="t-sharing-h">7) Sharing</h3>
+          <p id="t-sharing-p"></p>
+          <ul id="t-sharing-ul"></ul>
+        </section>
+
+        <section class="sec">
+          <h3 id="t-security-h">8) Security</h3>
+          <p id="t-security-p"></p>
+        </section>
+
+        <section class="sec">
+          <h3 id="t-minors-h">9) Children</h3>
+          <p id="t-minors-p"></p>
+        </section>
+
+        <section class="sec">
+          <h3 id="t-rights-h">10) Your Rights</h3>
+          <ul id="t-rights-ul"></ul>
+        </section>
+
+        <section class="sec">
+          <h3 id="t-contact-h">11) Contact</h3>
+          <p id="t-contact-p"></p>
+        </section>
+      </div>
+
+      <div class="footer">
+        <a href="../index.html" class="btn" id="t-back">Back to Home</a>
+        <span class="muted" id="t-foot-note">This page adapts to your selected language.</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- i18n dictionary ---
+    const I18N = {
+      "en": {
+        brand:"Privacy Center", brandSub:"Unified policy across products",
+        badge:"We respect your privacy",
+        title:"Privacy Policy",
+        lead:"This policy explains what data we collect, how we use it, and the choices you have.",
+        updatedLabel:"Last updated", updatedDate:"2025-09-03",
+        legal:"Compliant with applicable laws",
+        overviewH:"1) Overview",
+        overviewP:"We carefully handle personal data collected through our services and websites. We only process data as required by law and for clearly stated purposes. This policy applies across industries and products we operate on this domain.",
+        whatH:"2) Data We Collect",
+        whatUL:[
+          "Identifiers (account info, device IDs, IP address, cookies).",
+          "Contact details you provide (name, email, phone).",
+          "Usage data (pages viewed, links clicked, downloads, on-site searches, timestamps, browser type).",
+          "Transaction/support records (warranty, training, events, surveys, promotions).",
+          "Content you submit voluntarily (forms, feedback)."
+        ],
+        whyH:"3) How & Why We Use Data",
+        whyUL:[
+          "Provide and improve products/services, including customer support.",
+          "Operate the site, analytics, and performance monitoring.",
+          "Communicate updates, security alerts, and service messages.",
+          "Marketing with your consent and as permitted by law; you can opt out anytime.",
+          "Prevent abuse, investigate incidents, and ensure compliance."
+        ],
+        legalH:"4) Legal Bases",
+        legalUL:[
+          "Performance of a contract (e.g., providing requested services).",
+          "Legitimate interests (e.g., site security, product improvement).",
+          "Compliance with legal obligations.",
+          "Your consent, where required (you may withdraw at any time)."
+        ],
+        cookieH:"5) Cookies & Similar Tech",
+        cookieP:"We use cookies and similar technologies for essential functions, analytics, and, where allowed, personalization and marketing. You can manage cookies via your browser settings.",
+        retentionH:"6) Retention",
+        retentionP:"We retain personal data only for as long as necessary for the purposes described, or as required by law. Logs kept for security/investigation may be retained longer when needed.",
+        sharingH:"7) Sharing",
+        sharingP:"We do not sell personal data. We disclose data only when necessary:",
+        sharingUL:[
+          "Service providers processing data under our instructions.",
+          "Affiliates, where permitted and subject to this policy.",
+          "Legal/regulatory request or to protect rights, safety, and security.",
+          "Business transfers (e.g., merger/acquisition)."
+        ],
+        securityH:"8) Security",
+        securityP:"We implement administrative, technical, and physical safeguards to protect data. No method is 100% secure, but we continuously improve our controls.",
+        minorsH:"9) Children",
+        minorsP:"Our services are not directed to children under the age required by local law. If we learn we collected data from a child, we will delete it.",
+        rightsH:"10) Your Rights",
+        rightsUL:[
+          "Access, correct, or delete your personal data.",
+          "Object to or restrict certain processing.",
+          "Data portability, where applicable.",
+          "Opt out of marketing communications.",
+          "Lodge a complaint with your supervisory authority."
+        ],
+        contactH:"11) Contact",
+        contactP:"For privacy requests, please contact: privacy@{domain}. We will verify your request and respond within applicable timelines.",
+        back:"Back to Home",
+        footNote:"This page adapts to your selected language."
+      },
+      "zh-TW":{
+        brand:"隱私中心", brandSub:"跨產品一致的政策",
+        badge:"我們重視並保護您的隱私",
+        title:"隱私政策",
+        lead:"本政策說明我們收集哪些資料、如何使用，以及您可行使的權利。",
+        updatedLabel:"最近更新", updatedDate:"2025-09-03",
+        legal:"遵循適用法規",
+        overviewH:"1) 概述",
+        overviewP:"我們僅在法規允許且目的明確的前提下處理個人資料。本政策適用於本網域所提供的各類通用型服務與產品。",
+        whatH:"2) 我們收集的資料",
+        whatUL:[
+          "識別資訊（帳號、裝置 ID、IP、Cookie）。",
+          "您主動提供的聯絡方式（姓名、Email、電話）。",
+          "使用紀錄（瀏覽頁面、點擊連結、下載、站內搜尋、時間戳、瀏覽器類型）。",
+          "交易／客服記錄（保固、培訓、活動、問卷、促銷）。",
+          "您提交的內容（表單、意見回饋）。"
+        ],
+        whyH:"3) 使用目的",
+        whyUL:[
+          "提供與改進產品／服務，包含客服支援。",
+          "維運網站、進行分析與效能監控。",
+          "傳達更新、安全警示與服務訊息。",
+          "在合法與取得同意下進行行銷；您可隨時取消訂閱。",
+          "防制濫用、事件調查與合規管理。"
+        ],
+        legalH:"4) 法律依據",
+        legalUL:[
+          "履行契約（如提供您申請之服務）。",
+          "正當利益（如網站安全、產品改進）。",
+          "遵循法律義務。",
+          "在需要時取得您的同意（您可隨時撤回）。"
+        ],
+        cookieH:"5) Cookie 與類似技術",
+        cookieP:"我們使用 Cookie 以提供必要功能、進行分析，並在允許情況下用於個人化與行銷。您可透過瀏覽器設定管理 Cookie。",
+        retentionH:"6) 保存期間",
+        retentionP:"我們僅在達成既定目的或符合法規要求的期間內保存個人資料。出於安全或調查目的的日誌，於必要時得延長保存。",
+        sharingH:"7) 資料分享",
+        sharingP:"我們不販售個人資料。僅在必要時進行揭露：",
+        sharingUL:[
+          "依我們指示處理資料之服務供應商。",
+          "在許可範圍內之關係企業，並受本政策約束。",
+          "依法或為保護權利、安全與資安而提供。",
+          "企業交易（如合併或收購）。"
+        ],
+        securityH:"8) 資安防護",
+        securityP:"我們採取管理、技術與實體面安全措施以保護資料，並持續改進。但任何方法皆無法保證 100% 安全。",
+        minorsH:"9) 未成年人",
+        minorsP:"服務非以未達當地法定年齡者為對象。若發現誤收集，將予以刪除。",
+        rightsH:"10) 您的權利",
+        rightsUL:[
+          "查閱、更正或刪除個人資料。",
+          "反對或限制特定處理活動。",
+          "資料可攜權（如適用）。",
+          "退出行銷訊息。",
+          "向主管機關提出申訴。"
+        ],
+        contactH:"11) 聯絡我們",
+        contactP:"隱私請求請聯絡：privacy@{domain}。我們將於法定時限內回覆並先行驗證您的請求。",
+        back:"返回首頁",
+        footNote:"此頁面會依您的語言設定自動調整。"
+      },
+      "zh-CN":{
+        brand:"隐私中心", brandSub:"跨产品一致的政策",
+        badge:"我们重视并保护您的隐私",
+        title:"隐私政策",
+        lead:"本政策说明我们收集哪些数据、如何使用，以及您可行使的权利。",
+        updatedLabel:"最近更新", updatedDate:"2025-09-03",
+        legal:"遵循适用法律法规",
+        overviewH:"1) 概述",
+        overviewP:"我们仅在法律允许且目的明确的前提下处理个人数据。本政策适用于本域名下提供的各类通用型服务与产品。",
+        whatH:"2) 我们收集的数据",
+        whatUL:[
+          "标识信息（账户、设备 ID、IP、Cookie）。",
+          "您主动提供的联系方式（姓名、邮箱、电话）。",
+          "使用记录（浏览页面、点击链接、下载、站内搜索、时间戳、浏览器类型）。",
+          "交易/客服记录（保修、培训、活动、问卷、促销）。",
+          "您提交的内容（表单、反馈）。"
+        ],
+        whyH:"3) 使用目的",
+        whyUL:[
+          "提供与改进产品/服务，包括客户支持。",
+          "网站运营、数据分析与性能监控。",
+          "发送更新、安全提醒与服务通知。",
+          "在合法与取得同意情况下进行营销；您可随时退订。",
+          "防止滥用、调查事件并确保合规。"
+        ],
+        legalH:"4) 法律依据",
+        legalUL:[
+          "履行合同（如提供所请求的服务）。",
+          "合法利益（如网站安全、产品改进）。",
+          "遵守法律义务。",
+          "在需要时取得您的同意（可随时撤回）。"
+        ],
+        cookieH:"5) Cookie 与类似技术",
+        cookieP:"我们使用 Cookie 以提供必要功能、进行分析，并在允许情况下用于个性化与营销。您可通过浏览器设置管理 Cookie。",
+        retentionH:"6) 保存期限",
+        retentionP:"我们仅在实现目的或符合法规要求的期限内保存个人数据。出于安全或调查目的的日志在必要时可延长保存。",
+        sharingH:"7) 数据共享",
+        sharingP:"我们不出售个人数据。仅在必要时披露：",
+        sharingUL:[
+          "受我们指示处理数据的服务提供商。",
+          "在许可范围内的关联公司，并受本政策约束。",
+          "依法或为保护权利、安全与安防而提供。",
+          "企业交易（如并购）。"
+        ],
+        securityH:"8) 安全保护",
+        securityP:"我们采取管理、技术与物理安全措施保护数据，并持续改进。任何方法都无法保证 100% 安全。",
+        minorsH:"9) 未成年人",
+        minorsP:"我们的服务不面向未达当地法定年龄者。如发现误收集，将予以删除。",
+        rightsH:"10) 您的权利",
+        rightsUL:[
+          "访问、更正或删除个人数据。",
+          "反对或限制某些处理活动。",
+          "（如适用）数据可携权。",
+          "退出营销信息。",
+          "向监管机构投诉。"
+        ],
+        contactH:"11) 联系我们",
+        contactP:"隐私请求请联系：privacy@{domain}。我们将在法定时限内回复并先验证您的请求。",
+        back:"返回首页",
+        footNote:"页面将根据您的语言自动适配。"
+      },
+      "ja":{
+        brand:"プライバシーセンター", brandSub:"製品横断で一貫した方針",
+        badge:"お客さまのプライバシーを尊重します",
+        title:"プライバシーポリシー",
+        lead:"当社が収集するデータ、その利用目的、およびお客さまの権利についてご説明します。",
+        updatedLabel:"最終更新日", updatedDate:"2025-09-03",
+        legal:"適用法令に準拠",
+        overviewH:"1) 概要",
+        overviewP:"当社は、法令に基づき、明確な目的のもとでのみ個人データを取り扱います。本方針は本ドメインで提供する汎用的なサービス・製品に適用されます。",
+        whatH:"2) 収集するデータ",
+        whatUL:[
+          "識別情報（アカウント、デバイス ID、IP、Cookie）。",
+          "お客さまが提供する連絡先（氏名、メール、電話番号）。",
+          "利用状況（閲覧ページ、クリック、ダウンロード、サイト内検索、タイムスタンプ、ブラウザ種別）。",
+          "取引／サポート記録（保証、研修、イベント、アンケート、プロモーション）。",
+          "フォームやフィードバックなどの投稿内容。"
+        ],
+        whyH:"3) 利用目的",
+        whyUL:[
+          "製品・サービスの提供および改善、カスタマーサポート。",
+          "サイト運営、分析、パフォーマンス監視。",
+          "更新情報やセキュリティ通知、サービス連絡の送付。",
+          "法令に基づき、または同意を得た上でのマーケティング（いつでも配信停止可能）。",
+          "不正防止、事故調査、コンプライアンスの確保。"
+        ],
+        legalH:"4) 法的根拠",
+        legalUL:[
+          "契約の履行（申請されたサービスの提供など）。",
+          "正当な利益（サイトの安全性確保、製品改善など）。",
+          "法的義務の遵守。",
+          "必要に応じた同意（いつでも撤回可能）。"
+        ],
+        cookieH:"5) Cookie と類似技術",
+        cookieP:"必要機能の提供、分析、許可される場合のパーソナライゼーションやマーケティングのために Cookie 等を使用します。ブラウザ設定で管理できます。",
+        retentionH:"6) 保存期間",
+        retentionP:"本方針の目的達成または法的要件に必要な期間のみ個人データを保存します。セキュリティや調査目的のログは必要に応じて延長保存される場合があります。",
+        sharingH:"7) 共有",
+        sharingP:"個人データを販売することはありません。必要な場合に限り共有します：",
+        sharingUL:[
+          "当社の指示に基づき処理するサービス提供者。",
+          "許可された範囲での関連会社（本方針に従う）。",
+          "法令上の要請、権利・安全の保護。",
+          "事業譲渡（合併・買収など）。"
+        ],
+        securityH:"8) セキュリティ",
+        securityP:"管理・技術・物理的な保護策を講じています。100% の安全は保証できませんが、継続的に改善します。",
+        minorsH:"9) 未成年者",
+        minorsP:"当社サービスは、各地域の法定年齢未満を対象としていません。該当データが判明した場合は削除します。",
+        rightsH:"10) お客さまの権利",
+        rightsUL:[
+          "個人データへのアクセス、訂正、削除。",
+          "特定の処理への異議・制限。",
+          "適用される場合のデータポータビリティ。",
+          "マーケティング配信の停止。",
+          "監督機関への苦情申立て。"
+        ],
+        contactH:"11) 連絡先",
+        contactP:"プライバシーに関するご請求は privacy@{domain} まで。ご本人確認の上、法定期間内に対応します。",
+        back:"ホームへ戻る",
+        footNote:"選択した言語に合わせてページが変わります。"
+      },
+      "de":{
+        brand:"Datenschutzzentrum", brandSub:"Einheitliche Richtlinie über Produkte hinweg",
+        badge:"Wir respektieren Ihre Privatsphäre",
+        title:"Datenschutzerklärung",
+        lead:"Diese Richtlinie erläutert, welche Daten wir erheben, wie wir sie verwenden und welche Rechte Sie haben.",
+        updatedLabel:"Zuletzt aktualisiert", updatedDate:"2025-09-03",
+        legal:"Einhaltung geltender Gesetze",
+        overviewH:"1) Überblick",
+        overviewP:"Wir verarbeiten personenbezogene Daten nur im gesetzlich zulässigen Rahmen und für klar definierte Zwecke. Diese Richtlinie gilt für die auf dieser Domain angebotenen branchenübergreifenden Dienste und Produkte.",
+        whatH:"2) Welche Daten wir erheben",
+        whatUL:[
+          "Kennungen (Konto, Geräte-IDs, IP-Adresse, Cookies).",
+          "Von Ihnen bereitgestellte Kontaktdaten (Name, E-Mail, Telefon).",
+          "Nutzungsdaten (besuchte Seiten, Klicks, Downloads, On-Site-Suche, Zeitstempel, Browsertyp).",
+          "Transaktions-/Supportdaten (Garantie, Schulungen, Events, Umfragen, Promotions).",
+          "Von Ihnen übermittelte Inhalte (Formulare, Feedback)."
+        ],
+        whyH:"3) Zwecke der Verarbeitung",
+        whyUL:[
+          "Bereitstellung und Verbesserung von Produkten/Diensten einschließlich Support.",
+          "Betrieb der Website, Analysen und Performance-Monitoring.",
+          "Versand von Updates, Sicherheits- und Servicemitteilungen.",
+          "Marketing mit Ihrer Einwilligung und im Rahmen des Rechts; Abmeldung jederzeit möglich.",
+          "Missbrauchsvermeidung, Vorfallsuntersuchung und Compliance."
+        ],
+        legalH:"4) Rechtsgrundlagen",
+        legalUL:[
+          "Vertragserfüllung (z. B. Bereitstellung angeforderter Dienste).",
+          "Berechtigte Interessen (z. B. Sicherheit, Produktverbesserung).",
+          "Erfüllung gesetzlicher Verpflichtungen.",
+          "Ihre Einwilligung, soweit erforderlich (Widerruf jederzeit möglich)."
+        ],
+        cookieH:"5) Cookies & ähnliche Technologien",
+        cookieP:"Wir verwenden Cookies für essentielle Funktionen, Analysen und – soweit zulässig – Personalisierung und Marketing. Die Verwaltung erfolgt über Ihre Browsereinstellungen.",
+        retentionH:"6) Aufbewahrung",
+        retentionP:"Personenbezogene Daten werden nur so lange gespeichert, wie es für die beschriebenen Zwecke erforderlich ist oder das Gesetz es verlangt. Sicherheits-/Untersuchungslogs können bei Bedarf länger aufbewahrt werden.",
+        sharingH:"7) Weitergabe",
+        sharingP:"Wir verkaufen keine personenbezogenen Daten. Eine Offenlegung erfolgt nur bei Notwendigkeit:",
+        sharingUL:[
+          "Dienstleister, die Daten in unserem Auftrag verarbeiten.",
+          "Verbundene Unternehmen, soweit zulässig und an diese Richtlinie gebunden.",
+          "Auf behördliche Anforderung oder zum Schutz von Rechten, Sicherheit und Schutz.",
+          "Unternehmensübertragungen (z. B. Fusion/Übernahme)."
+        ],
+        securityH:"8) Sicherheit",
+        securityP:"Wir setzen administrative, technische und physische Schutzmaßnahmen ein. 100-%ige Sicherheit kann nicht garantiert werden; wir verbessern unsere Kontrollen fortlaufend.",
+        minorsH:"9) Minderjährige",
+        minorsP:"Unsere Dienste richten sich nicht an Personen unter dem jeweils geltenden Mindestalter. Erlangte Daten werden gelöscht.",
+        rightsH:"10) Ihre Rechte",
+        rightsUL:[
+          "Auskunft, Berichtigung, Löschung.",
+          "Widerspruch oder Einschränkung bestimmter Verarbeitungen.",
+          "Datenübertragbarkeit, soweit anwendbar.",
+          "Abmeldung von Marketingkommunikation.",
+          "Beschwerde bei einer Aufsichtsbehörde."
+        ],
+        contactH:"11) Kontakt",
+        contactP:"Für Datenschutzanfragen wenden Sie sich an: privacy@{domain}. Wir prüfen Ihre Anfrage und antworten innerhalb der gesetzlichen Fristen.",
+        back:"Zur Startseite",
+        footNote:"Diese Seite passt sich an die gewählte Sprache an."
+      }
+    };
+
+    // --- helpers ---
+    const qs = new URLSearchParams(location.search);
+    const paramLang = qs.get('lang');
+    const browserLang = (navigator.language || 'en').replace('_','-');
+    // Normalize to our keys
+    function normalize(l){
+      if(!l) return 'en';
+      const base = l.toLowerCase();
+      if(base.startsWith('zh-tw')) return 'zh-TW';
+      if(base.startsWith('zh-cn') || base === 'zh') return 'zh-CN';
+      if(base.startsWith('ja')) return 'ja';
+      if(base.startsWith('de')) return 'de';
+      return 'en';
+    }
+    const chosen = normalize(paramLang) || normalize(browserLang) || 'en';
+
+    function tset(lang){
+      const T = I18N[lang] || I18N['en'];
+      document.documentElement.lang = lang;
+      // header
+      document.getElementById('t-brand').textContent = T.brand;
+      document.getElementById('t-brand-sub').textContent = T.brandSub;
+      // hero
+      document.getElementById('t-badge').textContent = T.badge;
+      document.getElementById('t-title').textContent = T.title;
+      document.getElementById('t-lead').textContent = T.lead;
+      document.getElementById('t-updated-label').textContent = T.updatedLabel;
+      document.getElementById('t-updated-date').textContent = T.updatedDate;
+      document.getElementById('t-legal').textContent = T.legal;
+      // domain
+      const domain = location.hostname || 'yourdomain.com';
+      document.getElementById('t-domain').textContent = domain;
+
+      // sections
+      document.getElementById('t-overview-h').textContent = T.overviewH;
+      document.getElementById('t-overview-p').textContent = T.overviewP;
+
+      document.getElementById('t-what-h').textContent = T.whatH || I18N['en'].whatH;
+      fillList('t-what-ul', T.whatUL);
+
+      document.getElementById('t-why-h').textContent = T.whyH || I18N['en'].whyH;
+      fillList('t-why-ul', T.whyUL);
+
+      document.getElementById('t-legal-h').textContent = T.legalH || I18N['en'].legalH;
+      fillList('t-legal-ul', T.legalUL);
+
+      document.getElementById('t-cookie-h').textContent = T.cookieH;
+      document.getElementById('t-cookie-p').textContent = T.cookieP;
+
+      document.getElementById('t-retention-h').textContent = T.retentionH;
+      document.getElementById('t-retention-p').textContent = T.retentionP;
+
+      document.getElementById('t-sharing-h').textContent = T.sharingH;
+      document.getElementById('t-sharing-p').textContent = T.sharingP;
+      fillList('t-sharing-ul', T.sharingUL);
+
+      document.getElementById('t-security-h').textContent = T.securityH;
+      document.getElementById('t-security-p').textContent = T.securityP;
+
+      document.getElementById('t-minors-h').textContent = T.minorsH;
+      document.getElementById('t-minors-p').textContent = T.minorsP;
+
+      document.getElementById('t-rights-h').textContent = T.rightsH;
+      fillList('t-rights-ul', T.rightsUL);
+
+      document.getElementById('t-contact-h').textContent = T.contactH;
+      document.getElementById('t-contact-p').textContent = T.contactP.replace("{domain}", domain);
+
+      // footer
+      document.getElementById('t-back').textContent = T.back;
+      document.getElementById('t-foot-note').textContent = T.footNote;
+
+      // toggle active lang button
+      document.querySelectorAll('.lang button').forEach(b=>{
+        b.classList.toggle('active', b.dataset.lang===lang);
+        const url = new URL(location.href);
+        url.searchParams.set('lang', b.dataset.lang);
+        b.title = url.toString();
+      });
+
+      // also set <title>
+      document.title = T.title;
+    }
+
+    function fillList(id, arr){
+      const ul = document.getElementById(id);
+      ul.innerHTML = '';
+      (arr||[]).forEach(txt=>{
+        const li = document.createElement('li'); li.textContent = txt; ul.appendChild(li);
+      });
+    }
+
+    // Init & wire buttons
+    tset(chosen);
+    document.querySelectorAll('.lang button').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const l = btn.dataset.lang;
+        const url = new URL(location.href);
+        url.searchParams.set('lang', l);
+        history.replaceState({}, "", url); // update address bar without reload
+        tset(l);
+      });
+    });
+  </script>
+</body>
+</html>

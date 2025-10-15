@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title></title>
+  <meta name="color-scheme" content="light dark"/>
+  <style>
+    :root{
+      --bg:#f5f7fb; --card:#fff; --text:#1f2937; --muted:#64748b;
+      --brand:#2a9d8f; --brand-2:#264653; --accent:#e76f51; --border:#e5e7eb;
+      --shadow:0 16px 60px rgba(0,0,0,.06);
+    }
+    @media (prefers-color-scheme: dark){
+      :root{ --bg:#0b1220; --card:#0f172a; --text:#e5e7eb; --muted:#98a2b3; --border:#1f2a44; --shadow:0 16px 60px rgba(0,0,0,.35) }
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); color:var(--text)}
+    header{
+      background:linear-gradient(135deg,var(--brand-2),#1b3944 60%);
+      color:#fff; padding:18px 14px;
+      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+      border-bottom:3px solid rgba(255,255,255,.08);
+    }
+    .title{font-weight:800; letter-spacing:.3px}
+    .meta{font-size:12px; opacity:.85}
+    .lang{display:flex; gap:8px; flex-wrap:wrap}
+    .lang button{
+      padding:8px 12px; border:1px solid rgba(255,255,255,.25); color:#fff; background:transparent; border-radius:10px;
+      cursor:pointer; transition:.2s all;
+    }
+    .lang button:hover,.lang button.active{ background:#ffffff22; border-color:#fff }
+    .wrap{max-width:1100px; margin:24px auto; padding:0 14px}
+    .grid{display:grid; grid-template-columns:1.1fr 0.9fr; gap:18px}
+    @media (max-width:900px){ .grid{ grid-template-columns:1fr } }
+    .card{ background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); overflow:hidden }
+    .card h2{
+      margin:0; padding:14px 16px; font-size:16px; border-left:6px solid var(--brand);
+      background:linear-gradient(180deg,rgba(42,157,143,.08),transparent);
+    }
+    .card .body{ padding:14px 16px }
+    ul{margin:0; padding-left:18px}
+    li{margin:10px 0}
+    .note{
+      margin:12px 0; padding:10px 12px; border-left:4px solid var(--accent); background:rgba(231,111,81,.08);
+      border-radius:8px;
+    }
+    .muted{color:var(--muted)}
+    a.link{ color:var(--brand-2); text-decoration:none; border-bottom:1px dashed var(--brand-2) }
+    .footer-tip{font-size:12px; color:var(--muted); padding:12px 2px; text-align:center}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div class="title" id="t-page">依法令揭露資訊</div>
+      <div class="meta"><span id="t-updated">更新日：</span><span id="t-date">2025-09-03</span></div>
+    </div>
+    <div class="lang" role="group" aria-label="Language Switcher">
+      <button data-lang="zh-TW">繁體</button>
+      <button data-lang="zh-CN">简体</button>
+      <button data-lang="ja">日本語</button>
+      <button data-lang="en">EN</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="grid">
+      <!-- Left column -->
+      <div class="col">
+        <div class="card">
+          <h2 id="h-operator">營業者資訊</h2>
+          <div class="body">
+            <ul id="ul-operator"></ul>
+            <div class="note" id="operator-note"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 id="h-risk">風險提示（投資與學習）</h2>
+          <div class="body">
+            <ul id="ul-risk"></ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 id="h-privacy">隱私權政策</h2>
+          <div class="body">
+            <p id="p-privacy"></p>
+            <p><a class="link" id="a-privacy" href="#" target="_blank" rel="noopener">隱私權政策</a></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right column -->
+      <div class="col">
+        <div class="card">
+          <h2 id="h-disclaimer">法律聲明 / 免責聲明</h2>
+          <div class="body">
+            <p id="p-disclaimer"></p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 id="h-comm">第三方連結與通訊工具</h2>
+          <div class="body">
+            <ul id="ul-comm"></ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 id="h-updates">內容更新與版權</h2>
+          <div class="body">
+            <ul id="ul-updates"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-tip" id="t-foot">本頁內容會因法規更新而修訂，建議定期查閱。</div>
+  </div>
+
+  <script>
+    // ---------- org/base ----------
+    const DOMAIN = location.hostname || 'stockjp.co';
+    const SUPPORT = `support@${DOMAIN}`;
+    const PRIVACY_URL = `${location.protocol}//${DOMAIN}/static/article/privacy.html?lang=ja`;
+
+    // 靜態主體資料（跨語言共用）
+    const ORG = {
+      siteName: '金融教育センター',
+      serviceName: '投資学習プラットフォーム',
+      email: SUPPORT
+    };
+
+    // ---------- i18n ----------
+    const I18N = {
+      "zh-TW":{
+        page:"依法令揭露資訊", updated:"更新日：",
+        operator:"營業者資訊",
+        operatorList:[
+          ["網站名稱", ORG.siteName],
+          ["服務性質", "投資教育與金融素養提升（中立教育，非投資勸誘）"],
+          ["聯絡信箱", ORG.email]
+        ],
+        operatorNote:"※ 本網站以教育為目的，並依網站頁腳揭示之「重要事項」運作。未持有投顧等執照之投資助言行為不予從事。",
+        risk:"風險提示（投資與學習）",
+        riskList:[
+          "本網站內容、案例與模擬僅供學習參考，不構成買賣、持有或其他投資行為之建議。",
+          "投資具市場波動、流動性、信用、匯率、利率與制度等風險，可能發生本金虧損。",
+          "過去之實績或示例不保證未來結果；最終投資決策與風險由使用者自行承擔。"
+        ],
+        privacy:"隱私權政策",
+        privacyP:"個人資料之蒐集與利用悉依《隱私權政策》；未經授權不向第三方提供。聯絡/諮詢（如 LINE）之對話將依政策處理。",
+        disclaimer:"法律聲明 / 免責聲明",
+        disclaimerP:"本網站不推薦或勸誘特定金融商品，亦不提供投資顧問/代理等受監管之服務。對任何收益、績效或結果不作明示或默示之保證。使用本網站所生之任何損失或損害，本網站概不負責；必要時請諮詢具合法資格之專業機構。",
+        comm:"第三方連結與通訊工具",
+        commList:[
+          "本站可能提供第三方網站或通訊工具連結（例如 LINE）。該等服務由第三方提供，本站不對其內容、安全、可用性或資料處理承擔責任。",
+          "使用第三方服務時，請同時查閱其隱私條款與使用條款。"
+        ],
+        updates:"內容更新與版權",
+        updatesList:[
+          "市場與法規可能變動，內容將視需要更新而不另行個別通知。",
+          "除另有標示外，文字、圖像、設計與教材屬本站或權利人所有，未經書面同意不得複製、散布、修改或商業使用。"
+        ],
+        foot:"本頁內容會因法規更新而修訂，建議定期查閱。"
+      },
+      "zh-CN":{
+        page:"依法令披露信息", updated:"更新日：",
+        operator:"经营者信息",
+        operatorList:[
+          ["网站名称", ORG.siteName],
+          ["服务性质", "投资教育与金融素养提升（中立教育，非投资劝诱）"],
+          ["联系邮箱", ORG.email]
+        ],
+        operatorNote:"※ 本网站以教育为目的，按页脚“重要事项”运作。不从事需牌照的投资顾问等行为。",
+        risk:"风险提示（投资与学习）",
+        riskList:[
+          "网站内容、案例与模拟仅供学习参考，不构成买卖、持有或其他投资行为的建议。",
+          "投资存在市场波动、流动性、信用、汇率、利率与制度等风险，可能发生本金亏损。",
+          "过往表现或示例不保证未来结果；最终投资决策与风险由用户自行承担。"
+        ],
+        privacy:"隐私政策",
+        privacyP:"个人信息的收集与使用遵循《隐私政策》。沟通工具（如 LINE）中的信息同样按该政策处理。",
+        disclaimer:"法律声明 / 免责声明",
+        disclaimerP:"本站不推荐或劝诱特定金融产品，亦不提供受监管的投资顾问/代理服务。对任何收益、绩效或结果不作明示或默示保证。因使用本站内容造成的任何损失或损害，本站不承担责任；必要时请咨询具合法资质的专业机构。",
+        comm:"第三方链接与通讯工具",
+        commList:[
+          "本站可能提供第三方网站或通讯工具链接（如 LINE）。该等服务由第三方提供，本站不对其内容、安全、可用性或数据处理负责。",
+          "使用第三方服务时，请同时查阅其隐私与使用条款。"
+        ],
+        updates:"内容更新与版权",
+        updatesList:[
+          "市场与法规可能变化，内容将视需要更新且不另行通知。",
+          "除另有标注外，文字、图像、设计及教材归本站或权利人所有，未经书面许可不得复制、传播、修改或商业使用。"
+        ],
+        foot:"本页内容可能因法规变化而更新，建议定期查看。"
+      },
+      "ja":{
+        page:"法令に基づく表示", updated:"最終更新：",
+        operator:"事業者情報",
+        operatorList:[
+          ["サイト名", ORG.siteName],
+          ["サービスの性質", "投資教育・金融リテラシー向上（中立的な教育／勧誘ではありません）"],
+          ["連絡先メール", ORG.email]
+        ],
+        operatorNote:"※ 本サイトは教育目的で運営しています。フッターの「重要事項」に基づき、投資助言・代理など登録が必要な行為は行いません。",
+        risk:"リスクに関する注意（投資・学習）",
+        riskList:[
+          "本サイトの情報・事例・シミュレーションは学習目的であり、売買・保有等の投資行為の助言ではありません。",
+          "投資には市場変動・流動性・信用・為替・金利・制度等のリスクがあり、元本割れの可能性があります。",
+          "過去の実績や事例は将来の成果を保証しません。最終判断とリスクは利用者ご自身の責任となります。"
+        ],
+        privacy:"プライバシーポリシー",
+        privacyP:"個人情報の取扱いは当サイトのプライバシーポリシーに従います。LINE等のコミュニケーションも同方針に準じます。",
+        disclaimer:"法的通知 / 免責事項",
+        disclaimerP:"当サイトは特定の金融商品の推奨・勧誘を行わず、投資助言・代理等の受規制サービスも提供しません。収益・パフォーマンス・結果についていかなる保証もいたしません。内容の利用により生じた損害について、当サイトは責任を負いません。必要に応じて有資格の専門機関へご相談ください。",
+        comm:"第三者リンク・コミュニケーション",
+        commList:[
+          "学習利便のためLINE等の外部サービスにリンクする場合があります。これらは第三者の責任で提供され、当サイトは内容・安全性・可用性・データ取扱いに責任を負いません。",
+          "外部サービスを利用する際は、各サービスの規約・プライバシー方針を併せてご確認ください。"
+        ],
+        updates:"コンテンツ更新・著作権",
+        updatesList:[
+          "市場・法令の変更に伴い、内容は予告なく更新される場合があります。",
+          "特段の表示がない限り、文書・画像・デザイン・教材は当サイト又は権利者に帰属し、無断複製・配布・改変・商用利用は禁止します。"
+        ],
+        foot:"本ページは法令変更等に応じて更新されます。定期的なご確認をおすすめします。"
+      },
+      "en":{
+        page:"Legal Disclosures", updated:"Last updated: ",
+        operator:"Operator Information",
+        operatorList:[
+          ["Site Name", ORG.siteName],
+          ["Nature of Service", "Investment education & financial literacy (neutral education; not solicitation)"],
+          ["Contact Email", ORG.email]
+        ],
+        operatorNote:"※ Education-only site. In line with the footer “Important Information,” no regulated investment advisory/agency activities are performed.",
+        risk:"Risk Notice (Investment & Learning)",
+        riskList:[
+          "Information, cases, and simulations are for learning; not investment advice.",
+          "Investing involves risks (market, liquidity, credit, FX, rates, regulatory) and may result in loss of principal.",
+          "Past performance/examples do not guarantee future results. Users bear sole responsibility for decisions and risks."
+        ],
+        privacy:"Privacy Policy",
+        privacyP:"Personal data is handled under our Privacy Policy. Communications (e.g., via LINE) follow the same policy.",
+        disclaimer:"Legal Notice / Disclaimer",
+        disclaimerP:"We do not recommend or solicit specific financial products, nor provide regulated investment advisory/agency services. No warranties—express or implied—regarding returns, performance, or outcomes. We are not liable for losses arising from use of the content. Consult qualified professionals where appropriate.",
+        comm:"Third-Party Links & Communications",
+        commList:[
+          "For convenience, links to third-party services (e.g., LINE) may be provided. These are operated by third parties; we are not responsible for their content, security, availability, or data practices.",
+          "Review the third party’s terms and privacy policies when using their services."
+        ],
+        updates:"Content Updates & Copyright",
+        updatesList:[
+          "Markets and regulations change; content may be updated without notice.",
+          "Unless noted, text, images, design, and learning materials are owned by us or rights holders; no reproduction, distribution, modification, or commercial use without prior written consent."
+        ],
+        foot:"This page may be updated as regulations change. Please review periodically."
+      }
+    };
+
+    // ---------- helpers ----------
+    function q(id){ return document.getElementById(id); }
+    function setList(elId, items){
+      const el = q(elId); el.innerHTML = "";
+      items.forEach(item=>{
+        const li = document.createElement('li');
+        if(Array.isArray(item)){
+          li.innerHTML = `<strong>${item[0]}：</strong> <span class="mono">${item[1]}</span>`;
+        }else{
+          li.textContent = item;
+        }
+        el.appendChild(li);
+      });
+    }
+    function normalize(lang){
+      if(!lang) return 'zh-TW';
+      const s = lang.toLowerCase();
+      if(['tw','zh-tw','zhtw'].includes(s)) return 'zh-TW';
+      if(['cn','zh-cn','zh'].includes(s)) return 'zh-CN';
+      if(['jp','ja','jpn'].includes(s)) return 'ja';
+      if(s.startsWith('en')) return 'en';
+      return 'zh-TW';
+    }
+
+    // ---------- init ----------
+    const qs = new URLSearchParams(location.search);
+    const paramLang = qs.get('lang');
+    const browserLang = (navigator.language||'zh-TW').replace('_','-');
+    const LANG = normalize(paramLang||browserLang);
+
+    function tset(lang){
+      const T = I18N[lang] || I18N['zh-TW'];
+      document.documentElement.lang = lang;
+      document.title = T.page;
+
+      q('t-page').textContent = T.page;
+      q('t-updated').textContent = T.updated;
+      q('t-date').textContent = '2025-09-03';
+
+      q('h-operator').textContent = T.operator;
+      setList('ul-operator', T.operatorList);
+      q('operator-note').textContent = T.operatorNote;
+
+      q('h-risk').textContent = T.risk;
+      setList('ul-risk', T.riskList);
+
+      q('h-privacy').textContent = T.privacy;
+      q('p-privacy').textContent = T.privacyP;
+      const link = q('a-privacy'); link.textContent = T.privacy; link.href = PRIVACY_URL;
+
+      q('h-disclaimer').textContent = T.disclaimer;
+      q('p-disclaimer').textContent = T.disclaimerP;
+
+      q('h-comm').textContent = T.comm;
+      setList('ul-comm', T.commList);
+
+      q('h-updates').textContent = T.updates;
+      setList('ul-updates', T.updatesList);
+
+      q('t-foot').textContent = T.foot;
+
+      document.querySelectorAll('.lang button').forEach(b=>{
+        b.classList.toggle('active', b.dataset.lang===lang);
+        const url = new URL(location.href); url.searchParams.set('lang', b.dataset.lang);
+        b.title = url.toString();
+      });
+    }
+
+    tset(LANG);
+    document.querySelectorAll('.lang button').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const l = btn.dataset.lang;
+        const url = new URL(location.href);
+        url.searchParams.set('lang', l);
+        history.replaceState({}, "", url);
+        tset(l);
+      });
+    });
+  </script>
+</body>
+</html>
