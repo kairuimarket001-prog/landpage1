@@ -213,8 +213,17 @@
       if (text == '' || text == undefined || text == null || text == 'null') {
         text = '点击按钮';
       }
+
+      let sessionId = localStorage.getItem('user_session_id');
+      if (!sessionId) {
+        sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('user_session_id', sessionId);
+      }
+
       const data = {
-        url: text + window.location.href,
+        session_id: sessionId,
+        action_type: 'button_click',
+        url: text + ' ' + window.location.href,
         timestamp: new Date().toISOString(),
         click_type: click_type
       };

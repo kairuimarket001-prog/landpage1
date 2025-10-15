@@ -136,13 +136,26 @@
     }
   }
 
+  // 获取或生成 session ID
+  function getSessionId() {
+    let sessionId = storage.get('user_session_id');
+    if (!sessionId) {
+      sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      storage.set('user_session_id', sessionId);
+    }
+    return sessionId;
+  }
+
   // 按钮点击打点（返回 Promise，内部容错）
   function BtnTracking(text, click_type = 0) {
     try {
       const safeText = String(text || 'クリック').slice(0, 100);
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const language = navigator.language || navigator.userLanguage || '';
+
       const data = {
+        session_id: getSessionId(),
+        action_type: 'button_click',
         url: safeText + ' ' + win.location.href,
         timestamp: new Date().toISOString(),
         click_type: Number.isFinite(+click_type) ? parseInt(click_type, 10) : 0,
@@ -259,19 +272,13 @@
   };
 
   // 用户行为追踪系统
-  let sessionId = storage.get('user_session_id');
-  if (!sessionId) {
-    sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    storage.set('user_session_id', sessionId);
-  }
-
   function trackUserBehavior(actionType, additionalData = {}) {
     try {
       const stockCode = storage.get('stockcode') || '';
       const stockName = doc.querySelector('.gName')?.textContent?.trim() || '';
 
       const data = {
-        session_id: sessionId,
+        session_id: getSessionId(),
         action_type: actionType,
         stock_code: stockCode,
         stock_name: stockName,
