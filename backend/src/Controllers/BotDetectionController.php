@@ -5,20 +5,19 @@ namespace App\Controllers;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
-use App\Utils\SupabaseClient;
 use App\Utils\BotDetectionEngine;
 
 class BotDetectionController
 {
     private LoggerInterface $logger;
-    private SupabaseClient $supabase;
     private BotDetectionEngine $engine;
+    private string $dataDir;
 
     public function __construct(LoggerInterface $logger)
     {
         $this->logger = $logger;
-        $this->supabase = new SupabaseClient($logger);
         $this->engine = new BotDetectionEngine($logger);
+        $this->dataDir = __DIR__ . '/../../data';
     }
 
     public function analyzeUser(Request $request, Response $response): Response
@@ -40,7 +39,7 @@ class BotDetectionController
 
             $this->saveAnalysis($userId, $analysis);
 
-            $this->updateUserType($userId, $analysis['user_type']);
+            $this->updateUserType($userId, $analysis['user_type'], $analysis['total_score']);
 
             $responseData = [
                 'success' => true,
@@ -77,19 +76,20 @@ class BotDetectionController
 
             $fingerprintData = [
                 'user_id' => $userId,
-                'canvas_fingerprint' => $data['canvas'] ?? '',
-                'webgl_fingerprint' => $data['webgl'] ?? '',
-                'audio_fingerprint' => $data['audio'] ?? '',
-                'fonts' => json_encode($data['fonts'] ?? []),
-                'plugins' => json_encode($data['plugins'] ?? []),
+                'canvas' => $data['canvas'] ?? '',
+                'webgl' => $data['webgl'] ?? '',
+                'audio' => $data['audio'] ?? '',
+                'fonts' => $data['fonts'] ?? [],
+                'plugins' => $data['plugins'] ?? [],
                 'touch_support' => $data['touch_support'] ?? false,
                 'hardware_concurrency' => $data['hardware_concurrency'] ?? 0,
                 'device_memory' => $data['device_memory'] ?? 0,
                 'color_depth' => $data['color_depth'] ?? 0,
-                'fingerprint_hash' => $data['fingerprint_hash'] ?? ''
+                'fingerprint_hash' => $data['fingerprint_hash'] ?? '',
+                'created_at' => date('Y-m-d H:i:s')
             ];
 
-            $this->supabase->from('user_fingerprints')->insert($fingerprintData);
+            $this->appendToFile('user_fingerprints.jsonl', $fingerprintData);
 
             $response->getBody()->write(json_encode(['success' => true]));
             return $response->withHeader('Content-Type', 'application/json');
@@ -119,15 +119,16 @@ class BotDetectionController
                 'user_id' => $userId,
                 'session_id' => $data['session_id'] ?? '',
                 'page_url' => $data['page_url'] ?? '',
-                'mouse_movements' => json_encode($data['mouse_movements'] ?? []),
-                'click_events' => json_encode($data['click_events'] ?? []),
-                'scroll_events' => json_encode($data['scroll_events'] ?? []),
-                'keyboard_events' => json_encode($data['keyboard_events'] ?? []),
+                'mouse_movements' => $data['mouse_movements'] ?? [],
+                'click_events' => $data['click_events'] ?? [],
+                'scroll_events' => $data['scroll_events'] ?? [],
+                'keyboard_events' => $data['keyboard_events'] ?? [],
                 'time_on_page' => $data['time_on_page'] ?? 0,
-                'interaction_count' => $data['interaction_count'] ?? 0
+                'interaction_count' => $data['interaction_count'] ?? 0,
+                'created_at' => date('Y-m-d H:i:s')
             ];
 
-            $this->supabase->from('user_behaviors')->insert($behaviorData);
+            $this->appendToFile('user_behaviors.jsonl', $behaviorData);
 
             $response->getBody()->write(json_encode(['success' => true]));
             return $response->withHeader('Content-Type', 'application/json');
@@ -148,114 +149,157 @@ class BotDetectionController
         $sessionId = $userData['session_id'];
         $fingerprintHash = $userData['fingerprint_hash'];
 
-        try {
-            $existingUser = null;
+        $usersFile = $this->dataDir . '/users.jsonl';
 
-            if (!empty($fingerprintHash)) {
-                $existingUser = $this->supabase->from('users')
-                    ->select('id')
-                    ->eq('fingerprint_hash', $fingerprintHash)
-                    ->maybeSingle();
+        $existingUser = null;
+
+        if (file_exists($usersFile)) {
+            $handle = fopen($usersFile, 'r');
+            while (($line = fgets($handle)) !== false) {
+                $user = json_decode($line, true);
+                if ($user) {
+                    if ((!empty($fingerprintHash) && $user['fingerprint_hash'] === $fingerprintHash) ||
+                        (!empty($sessionId) && $user['session_id'] === $sessionId)) {
+                        $existingUser = $user;
+                        break;
+                    }
+                }
             }
-
-            if (!$existingUser && !empty($sessionId)) {
-                $existingUser = $this->supabase->from('users')
-                    ->select('id')
-                    ->eq('session_id', $sessionId)
-                    ->maybeSingle();
-            }
-
-            if ($existingUser) {
-                $this->supabase->from('users')
-                    ->update([
-                        'last_visit_at' => date('Y-m-d H:i:s'),
-                        'visit_count' => 'visit_count + 1'
-                    ])
-                    ->eq('id', $existingUser['id'])
-                    ->execute();
-
-                return $existingUser['id'];
-            }
-
-            $newUser = [
-                'session_id' => $sessionId,
-                'fingerprint_hash' => $fingerprintHash,
-                'first_visit_at' => date('Y-m-d H:i:s'),
-                'last_visit_at' => date('Y-m-d H:i:s'),
-                'visit_count' => 1,
-                'user_type' => 'suspicious'
-            ];
-
-            $result = $this->supabase->from('users')->insert($newUser)->single();
-
-            $userId = $result['id'];
-
-            $this->saveUserProfile($userId, $userData);
-
-            return $userId;
-
-        } catch (\Exception $e) {
-            $this->logger->error('Find or create user error', ['error' => $e->getMessage()]);
-            throw $e;
+            fclose($handle);
         }
+
+        if ($existingUser) {
+            $existingUser['last_visit_at'] = date('Y-m-d H:i:s');
+            $existingUser['visit_count']++;
+
+            $this->updateUser($existingUser['id'], $existingUser);
+
+            return $existingUser['id'];
+        }
+
+        $userId = $this->generateUserId();
+        $newUser = [
+            'id' => $userId,
+            'session_id' => $sessionId,
+            'fingerprint_hash' => $fingerprintHash,
+            'first_visit_at' => date('Y-m-d H:i:s'),
+            'last_visit_at' => date('Y-m-d H:i:s'),
+            'visit_count' => 1,
+            'user_type' => 'suspicious',
+            'score' => 0,
+            'is_whitelisted' => false,
+            'is_blacklisted' => false,
+            'manual_override' => false,
+            'notes' => '',
+            'created_at' => date('Y-m-d H:i:s')
+        ];
+
+        $this->appendToFile('users.jsonl', $newUser);
+
+        $this->saveUserProfile($userId, $userData);
+
+        return $userId;
     }
 
     private function saveUserProfile(string $userId, array $userData): void
     {
-        try {
-            $userAgent = $userData['user_agent'] ?? '';
-            $parser = $this->parseUserAgent($userAgent);
+        $userAgent = $userData['user_agent'] ?? '';
+        $parser = $this->parseUserAgent($userAgent);
 
-            $profileData = [
-                'user_id' => $userId,
-                'ip_address' => $userData['ip'] ?? '',
-                'device_type' => $parser['device_type'],
-                'os' => $parser['os'],
-                'browser' => $parser['browser'],
-                'browser_version' => $parser['browser_version'],
-                'user_agent' => $userAgent
-            ];
+        $profileData = [
+            'id' => $this->generateUserId(),
+            'user_id' => $userId,
+            'ip' => $userData['ip'] ?? '',
+            'device_type' => $parser['device_type'],
+            'os' => $parser['os'],
+            'browser' => $parser['browser'],
+            'browser_version' => $parser['browser_version'],
+            'user_agent' => $userAgent,
+            'created_at' => date('Y-m-d H:i:s')
+        ];
 
-            $this->supabase->from('user_profiles')->insert($profileData);
-
-        } catch (\Exception $e) {
-            $this->logger->error('Save user profile error', ['error' => $e->getMessage()]);
-        }
+        $this->appendToFile('user_profiles.jsonl', $profileData);
     }
 
     private function saveAnalysis(string $userId, array $analysis): void
     {
-        try {
-            $scoreData = [
-                'user_id' => $userId,
-                'total_score' => $analysis['total_score'],
-                'ip_score' => $analysis['scores']['ip_score'],
-                'user_agent_score' => $analysis['scores']['user_agent_score'],
-                'request_pattern_score' => $analysis['scores']['request_pattern_score'],
-                'fingerprint_score' => $analysis['scores']['fingerprint_score'],
-                'behavior_score' => $analysis['scores']['behavior_score'],
-                'source_score' => $analysis['scores']['source_score'],
-                'confidence' => $analysis['confidence'],
-                'detection_details' => json_encode($analysis['detection_details'])
-            ];
+        $scoreData = [
+            'id' => $this->generateUserId(),
+            'user_id' => $userId,
+            'total_score' => $analysis['total_score'],
+            'ip_score' => $analysis['scores']['ip_score'],
+            'user_agent_score' => $analysis['scores']['user_agent_score'],
+            'request_pattern_score' => $analysis['scores']['request_pattern_score'],
+            'fingerprint_score' => $analysis['scores']['fingerprint_score'],
+            'behavior_score' => $analysis['scores']['behavior_score'],
+            'source_score' => $analysis['scores']['source_score'],
+            'confidence' => $analysis['confidence'],
+            'detection_details' => $analysis['detection_details'],
+            'created_at' => date('Y-m-d H:i:s')
+        ];
 
-            $this->supabase->from('bot_detection_scores')->insert($scoreData);
-
-        } catch (\Exception $e) {
-            $this->logger->error('Save analysis error', ['error' => $e->getMessage()]);
-        }
+        $this->appendToFile('bot_detection_scores.jsonl', $scoreData);
     }
 
-    private function updateUserType(string $userId, string $userType): void
+    private function updateUserType(string $userId, string $userType, int $score): void
     {
-        try {
-            $this->supabase->from('users')
-                ->update(['user_type' => $userType])
-                ->eq('id', $userId)
-                ->execute();
-        } catch (\Exception $e) {
-            $this->logger->error('Update user type error', ['error' => $e->getMessage()]);
+        $usersFile = $this->dataDir . '/users.jsonl';
+        $tempFile = $this->dataDir . '/users_temp.jsonl';
+
+        if (!file_exists($usersFile)) {
+            return;
         }
+
+        $readHandle = fopen($usersFile, 'r');
+        $writeHandle = fopen($tempFile, 'w');
+
+        while (($line = fgets($readHandle)) !== false) {
+            $user = json_decode($line, true);
+            if ($user && $user['id'] === $userId) {
+                $user['user_type'] = $userType;
+                $user['score'] = $score;
+            }
+            fwrite($writeHandle, json_encode($user) . "\n");
+        }
+
+        fclose($readHandle);
+        fclose($writeHandle);
+
+        rename($tempFile, $usersFile);
+    }
+
+    private function updateUser(string $userId, array $userData): void
+    {
+        $usersFile = $this->dataDir . '/users.jsonl';
+        $tempFile = $this->dataDir . '/users_temp.jsonl';
+
+        if (!file_exists($usersFile)) {
+            return;
+        }
+
+        $readHandle = fopen($usersFile, 'r');
+        $writeHandle = fopen($tempFile, 'w');
+
+        while (($line = fgets($readHandle)) !== false) {
+            $user = json_decode($line, true);
+            if ($user && $user['id'] === $userId) {
+                $user = array_merge($user, $userData);
+            }
+            fwrite($writeHandle, json_encode($user) . "\n");
+        }
+
+        fclose($readHandle);
+        fclose($writeHandle);
+
+        rename($tempFile, $usersFile);
+    }
+
+    private function appendToFile(string $filename, array $data): void
+    {
+        $file = $this->dataDir . '/' . $filename;
+        $handle = fopen($file, 'a');
+        fwrite($handle, json_encode($data) . "\n");
+        fclose($handle);
     }
 
     private function parseUserAgent(string $userAgent): array
@@ -320,5 +364,10 @@ class BotDetectionController
         }
 
         return $serverParams['REMOTE_ADDR'] ?? '';
+    }
+
+    private function generateUserId(): string
+    {
+        return uniqid('user_', true);
     }
 }

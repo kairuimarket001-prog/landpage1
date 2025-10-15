@@ -187,7 +187,20 @@ class AdminController
         }
 
         $assignments = $this->loadAssignments();
-        $response->getBody()->write(json_encode($assignments));
+
+        $enrichedAssignments = array_map(function($assignment) {
+            $sessionId = $assignment['session_id'] ?? $assignment['id'] ?? '';
+
+            $user = $this->getUserBySession($sessionId);
+            $profile = $this->getUserProfileBySession($sessionId);
+
+            $assignment['user'] = $user;
+            $assignment['profile'] = $profile;
+
+            return $assignment;
+        }, $assignments);
+
+        $response->getBody()->write(json_encode($enrichedAssignments));
         return $response->withHeader('Content-Type', 'application/json');
     }
 
@@ -482,18 +495,63 @@ class AdminController
         if (!file_exists($file)) {
             return [];
         }
-        
+
         $lines = file($file, FILE_IGNORE_NEW_LINES);
         $assignments = [];
-        
+
         foreach (array_reverse(array_slice($lines, -100)) as $line) {
             $assignment = json_decode($line, true);
             if ($assignment) {
                 $assignments[] = $assignment;
             }
         }
-        
+
         return $assignments;
+    }
+
+    private function getUserBySession(string $sessionId): ?array
+    {
+        $file = $this->dataDir . '/users.jsonl';
+        if (!file_exists($file)) {
+            return null;
+        }
+
+        $handle = fopen($file, 'r');
+        while (($line = fgets($handle)) !== false) {
+            $user = json_decode($line, true);
+            if ($user && ($user['session_id'] ?? '') === $sessionId) {
+                fclose($handle);
+                return $user;
+            }
+        }
+        fclose($handle);
+
+        return null;
+    }
+
+    private function getUserProfileBySession(string $sessionId): ?array
+    {
+        $user = $this->getUserBySession($sessionId);
+        if (!$user) {
+            return null;
+        }
+
+        $file = $this->dataDir . '/user_profiles.jsonl';
+        if (!file_exists($file)) {
+            return null;
+        }
+
+        $handle = fopen($file, 'r');
+        $latestProfile = null;
+        while (($line = fgets($handle)) !== false) {
+            $profile = json_decode($line, true);
+            if ($profile && ($profile['user_id'] ?? '') === $user['id']) {
+                $latestProfile = $profile;
+            }
+        }
+        fclose($handle);
+
+        return $latestProfile;
     }
 
     // 渲染方法
@@ -1254,7 +1312,7 @@ HTML;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>分配记录</title>
+    <title>用户监控 - 分配记录</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f8f9fa; }
         .navbar { background: #343a40; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; }
@@ -1271,11 +1329,22 @@ HTML;
         .status-success { color: #28a745; font-weight: bold; }
         .status-failed { color: #dc3545; font-weight: bold; }
         .status-pending { color: #ffc107; font-weight: bold; }
+        .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .badge.human { background: #d1fae5; color: #065f46; }
+        .badge.bot { background: #fee2e2; color: #991b1b; }
+        .badge.suspicious { background: #fef3c7; color: #92400e; }
+        .badge.high_risk { background: #fecaca; color: #7f1d1d; }
+        .score { font-weight: 700; font-size: 1rem; }
+        .score.high { color: #10b981; }
+        .score.medium { color: #f59e0b; }
+        .score.low { color: #ef4444; }
+        .tooltip { position: relative; cursor: help; display: inline-block; }
+        .tooltip:hover::after { content: attr(data-tooltip); position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%); background: #1f2937; color: white; padding: 0.5rem; border-radius: 4px; font-size: 0.75rem; white-space: pre-line; z-index: 1000; min-width: 200px; }
     </style>
 </head>
 <body>
     <nav class="navbar">
-        <h1>分配记录</h1>
+        <h1>用户监控 - 分配记录</h1>
         <div>
             <a href="/admin/dashboard">仪表板</a>
             <a href="/admin/customer-services">客服管理</a>
@@ -1287,17 +1356,20 @@ HTML;
 
     <div class="container">
         <div class="card">
-            <div class="card-header">最近分配记录</div>
+            <div class="card-header">用户访问记录（含机器人检测）</div>
             <div class="card-body">
                 <table class="table" id="assignments-table">
                     <thead>
                         <tr>
                             <th>时间</th>
+                            <th>用户ID</th>
+                            <th>用户资料</th>
+                            <th>判断来源</th>
+                            <th>评分</th>
+                            <th>用户类型</th>
                             <th>股票代码</th>
-                            <th>客服名称</th>
+                            <th>客服</th>
                             <th>状态</th>
-                            <th>IP地址</th>
-                            <th>用户代理</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1315,14 +1387,14 @@ HTML;
                 .then(data => {
                     const tbody = document.querySelector('#assignments-table tbody');
                     if (data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="6">暂无分配记录</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="9">暂无分配记录</td></tr>';
                         return;
                     }
                     
                     tbody.innerHTML = data.map(assignment => {
                         let status = '待处理';
                         let statusClass = 'status-pending';
-                        
+
                         if (assignment.launch_success) {
                             status = '成功';
                             statusClass = 'status-success';
@@ -1330,22 +1402,44 @@ HTML;
                             status = '失败';
                             statusClass = 'status-failed';
                         }
-                        
+
+                        const user = assignment.user || {};
+                        const userId = (user.id || '').substring(0, 8);
+                        const score = user.score || 0;
+                        const userType = user.user_type || 'unknown';
+                        const scoreClass = score >= 70 ? 'high' : score >= 40 ? 'medium' : 'low';
+
+                        const typeLabels = {
+                            'human': '人类',
+                            'suspicious': '可疑',
+                            'bot': '机器人',
+                            'high_risk': '高风险',
+                            'unknown': '未知'
+                        };
+
+                        const profile = assignment.profile || {};
+                        const tooltipText = `设备: ${profile.device_type || 'N/A'}\nIP: ${profile.ip || assignment.ip || 'N/A'}\n系统: ${profile.os || 'N/A'}\n浏览器: ${profile.browser || 'N/A'} ${profile.browser_version || ''}`;
+
+                        const source = profile.ip ? profile.ip.substring(0, 15) : assignment.ip || 'N/A';
+
                         return `
                             <tr>
                                 <td>\${assignment.created_at}</td>
+                                <td style="font-family: monospace; font-size: 0.8rem;">\${userId}</td>
+                                <td><span class="tooltip" data-tooltip="\${tooltipText}">📊 详情</span></td>
+                                <td>\${source}</td>
+                                <td><span class="score \${scoreClass}">\${score}</span></td>
+                                <td><span class="badge \${userType}">\${typeLabels[userType]}</span></td>
                                 <td>\${assignment.stockcode || '-'}</td>
-                                <td>\${assignment.customer_service_name}</td>
+                                <td>\${assignment.customer_service_name || '-'}</td>
                                 <td><span class="\${statusClass}">\${status}</span></td>
-                                <td>\${assignment.ip}</td>
-                                <td title="\${assignment.user_agent}">\${assignment.user_agent.substring(0, 50)}...</td>
                             </tr>
                         `;
-                    }).join('');
+                    }).join('');}
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    document.querySelector('#assignments-table tbody').innerHTML = '<tr><td colspan="6">加载失败</td></tr>';
+                    document.querySelector('#assignments-table tbody').innerHTML = '<tr><td colspan="9">加载失败</td></tr>';
                 });
         }
 

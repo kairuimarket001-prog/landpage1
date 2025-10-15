@@ -7,7 +7,7 @@ use Psr\Log\LoggerInterface;
 class BotDetectionEngine
 {
     private LoggerInterface $logger;
-    private SupabaseClient $supabase;
+    private string $dataDir;
 
     private const WEIGHTS = [
         'ip' => 20,
@@ -31,7 +31,7 @@ class BotDetectionEngine
     public function __construct(LoggerInterface $logger)
     {
         $this->logger = $logger;
-        $this->supabase = new SupabaseClient($logger);
+        $this->dataDir = __DIR__ . '/../../data';
     }
 
     public function analyzeUser(array $userData): array
@@ -84,10 +84,6 @@ class BotDetectionEngine
 
         if ($this->isDatacenterIP($ipAddress)) {
             $score -= 10;
-        }
-
-        if ($this->isKnownProxyIP($ipAddress)) {
-            $score -= 8;
         }
 
         if ($this->hasHighRequestFrequency($ipAddress)) {
@@ -143,14 +139,6 @@ class BotDetectionEngine
             $score -= 10;
         }
 
-        if ($this->hasRegularIntervals($sessionId)) {
-            $score -= 8;
-        }
-
-        if ($this->lacksTypicalUserBehavior($sessionId)) {
-            $score -= 5;
-        }
-
         return max(0, $score);
     }
 
@@ -167,19 +155,7 @@ class BotDetectionEngine
             return $score;
         }
 
-        if (!$this->isFingerprintConsistent($userData)) {
-            $score -= 12;
-        }
-
-        if ($this->isCommonBotFingerprint($fingerprintHash)) {
-            $score -= 15;
-        }
-
-        if ($this->hasSuspiciousFingerprint($userData)) {
-            $score -= 8;
-        }
-
-        return max(0, $score);
+        return $score;
     }
 
     private function analyzeBehavior(array $userData): int
@@ -197,21 +173,25 @@ class BotDetectionEngine
             return max(0, $score - 15);
         }
 
-        if (!$this->hasMouseMovements($behaviors)) {
-            $score -= 10;
+        $hasMouseMovements = false;
+        $hasClicks = false;
+        $hasScrolls = false;
+
+        foreach ($behaviors as $behavior) {
+            if (!empty($behavior['mouse_movements'])) {
+                $hasMouseMovements = true;
+            }
+            if (!empty($behavior['click_events'])) {
+                $hasClicks = true;
+            }
+            if (!empty($behavior['scroll_events'])) {
+                $hasScrolls = true;
+            }
         }
 
-        if (!$this->hasNaturalClickPatterns($behaviors)) {
-            $score -= 8;
-        }
-
-        if (!$this->hasScrollActivity($behaviors)) {
-            $score -= 7;
-        }
-
-        if ($this->hasRoboticBehavior($behaviors)) {
-            $score -= 12;
-        }
+        if (!$hasMouseMovements) $score -= 10;
+        if (!$hasClicks) $score -= 8;
+        if (!$hasScrolls) $score -= 7;
 
         return max(0, $score);
     }
@@ -224,11 +204,7 @@ class BotDetectionEngine
         if (empty($referer)) {
             $score -= 3;
         } elseif ($this->isFromSearchEngine($referer)) {
-            if (!$this->isValidSearchEngineReferer($userData)) {
-                $score -= 8;
-            }
-        } elseif ($this->isSuspiciousReferer($referer)) {
-            $score -= 5;
+            $score += 0;
         }
 
         return max(0, $score);
@@ -323,34 +299,51 @@ class BotDetectionEngine
 
     private function isWhitelistedIP(string $ip): bool
     {
-        try {
-            $result = $this->supabase->from('ip_whitelist')
-                ->select('id')
-                ->eq('ip_address', $ip)
-                ->or('expires_at.is.null,expires_at.gt.' . date('Y-m-d H:i:s'))
-                ->maybeSingle();
-
-            return $result !== null;
-        } catch (\Exception $e) {
-            $this->logger->error('Error checking IP whitelist', ['error' => $e->getMessage()]);
-            return false;
+        $whitelist = $this->loadBlacklist('ip_whitelist.json');
+        foreach ($whitelist as $entry) {
+            if ($entry['ip'] === $ip) {
+                if (empty($entry['expires_at']) || strtotime($entry['expires_at']) > time()) {
+                    return true;
+                }
+            }
         }
+        return false;
     }
 
     private function isBlacklistedIP(string $ip): bool
     {
-        try {
-            $result = $this->supabase->from('ip_blacklist')
-                ->select('id')
-                ->eq('ip_address', $ip)
-                ->or('expires_at.is.null,expires_at.gt.' . date('Y-m-d H:i:s'))
-                ->maybeSingle();
-
-            return $result !== null;
-        } catch (\Exception $e) {
-            $this->logger->error('Error checking IP blacklist', ['error' => $e->getMessage()]);
-            return false;
+        $blacklist = $this->loadBlacklist('ip_blacklist.json');
+        foreach ($blacklist as $entry) {
+            if ($entry['ip'] === $ip) {
+                if (empty($entry['expires_at']) || strtotime($entry['expires_at']) > time()) {
+                    return true;
+                }
+            }
         }
+        return false;
+    }
+
+    private function isWhitelistedFingerprint(string $fingerprintHash): bool
+    {
+        $whitelist = $this->loadBlacklist('fingerprint_whitelist.json');
+        foreach ($whitelist as $entry) {
+            if ($entry['fingerprint_hash'] === $fingerprintHash) {
+                if (empty($entry['expires_at']) || strtotime($entry['expires_at']) > time()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private function loadBlacklist(string $filename): array
+    {
+        $file = $this->dataDir . '/' . $filename;
+        if (!file_exists($file)) {
+            return [];
+        }
+        $content = file_get_contents($file);
+        return json_decode($content, true) ?? [];
     }
 
     private function isDatacenterIP(string $ip): bool
@@ -363,25 +356,29 @@ class BotDetectionEngine
         return false;
     }
 
-    private function isKnownProxyIP(string $ip): bool
-    {
-        return false;
-    }
-
     private function hasHighRequestFrequency(string $ip): bool
     {
-        try {
-            $fiveMinutesAgo = date('Y-m-d H:i:s', strtotime('-5 minutes'));
-            $result = $this->supabase->from('user_profiles')
-                ->select('id', ['count' => 'exact'])
-                ->eq('ip_address', $ip)
-                ->gte('created_at', $fiveMinutesAgo)
-                ->execute();
-
-            return ($result['count'] ?? 0) > 50;
-        } catch (\Exception $e) {
+        $file = $this->dataDir . '/user_profiles.jsonl';
+        if (!file_exists($file)) {
             return false;
         }
+
+        $fiveMinutesAgo = time() - 300;
+        $count = 0;
+
+        $handle = fopen($file, 'r');
+        while (($line = fgets($handle)) !== false) {
+            $data = json_decode($line, true);
+            if ($data && $data['ip'] === $ip) {
+                $createdAt = strtotime($data['created_at'] ?? '');
+                if ($createdAt > $fiveMinutesAgo) {
+                    $count++;
+                }
+            }
+        }
+        fclose($handle);
+
+        return $count > 50;
     }
 
     private function hasValidBrowserSignature(string $userAgent): bool
@@ -416,128 +413,65 @@ class BotDetectionEngine
 
     private function getSessionRequestCount(string $sessionId): int
     {
-        try {
-            $result = $this->supabase->from('user_behaviors')
-                ->select('id', ['count' => 'exact'])
-                ->eq('session_id', $sessionId)
-                ->execute();
-
-            return $result['count'] ?? 0;
-        } catch (\Exception $e) {
+        $file = $this->dataDir . '/user_behaviors.jsonl';
+        if (!file_exists($file)) {
             return 0;
         }
+
+        $count = 0;
+        $handle = fopen($file, 'r');
+        while (($line = fgets($handle)) !== false) {
+            $data = json_decode($line, true);
+            if ($data && ($data['session_id'] ?? '') === $sessionId) {
+                $count++;
+            }
+        }
+        fclose($handle);
+
+        return $count;
     }
 
     private function getSessionTimeSpan(string $sessionId): int
     {
-        try {
-            $result = $this->supabase->from('user_behaviors')
-                ->select('created_at')
-                ->eq('session_id', $sessionId)
-                ->order('created_at', ['ascending' => true])
-                ->limit(1)
-                ->maybeSingle();
+        $file = $this->dataDir . '/user_behaviors.jsonl';
+        if (!file_exists($file)) {
+            return 0;
+        }
 
-            if ($result) {
-                $firstVisit = strtotime($result['created_at']);
-                return time() - $firstVisit;
+        $firstTimestamp = null;
+        $handle = fopen($file, 'r');
+        while (($line = fgets($handle)) !== false) {
+            $data = json_decode($line, true);
+            if ($data && ($data['session_id'] ?? '') === $sessionId) {
+                $timestamp = strtotime($data['created_at'] ?? '');
+                if ($firstTimestamp === null) {
+                    $firstTimestamp = $timestamp;
+                }
             }
-            return 0;
-        } catch (\Exception $e) {
-            return 0;
         }
-    }
+        fclose($handle);
 
-    private function hasRegularIntervals(string $sessionId): bool
-    {
-        return false;
-    }
-
-    private function lacksTypicalUserBehavior(string $sessionId): bool
-    {
-        return false;
-    }
-
-    private function isWhitelistedFingerprint(string $fingerprintHash): bool
-    {
-        try {
-            $result = $this->supabase->from('fingerprint_whitelist')
-                ->select('id')
-                ->eq('fingerprint_hash', $fingerprintHash)
-                ->or('expires_at.is.null,expires_at.gt.' . date('Y-m-d H:i:s'))
-                ->maybeSingle();
-
-            return $result !== null;
-        } catch (\Exception $e) {
-            return false;
-        }
-    }
-
-    private function isFingerprintConsistent(array $userData): bool
-    {
-        return true;
-    }
-
-    private function isCommonBotFingerprint(string $fingerprintHash): bool
-    {
-        return false;
-    }
-
-    private function hasSuspiciousFingerprint(array $userData): bool
-    {
-        return false;
+        return $firstTimestamp ? (time() - $firstTimestamp) : 0;
     }
 
     private function getUserBehaviors(string $sessionId): array
     {
-        try {
-            $result = $this->supabase->from('user_behaviors')
-                ->select('*')
-                ->eq('session_id', $sessionId)
-                ->execute();
-
-            return $result['data'] ?? [];
-        } catch (\Exception $e) {
+        $file = $this->dataDir . '/user_behaviors.jsonl';
+        if (!file_exists($file)) {
             return [];
         }
-    }
 
-    private function hasMouseMovements(array $behaviors): bool
-    {
-        foreach ($behaviors as $behavior) {
-            $movements = $behavior['mouse_movements'] ?? [];
-            if (!empty($movements)) {
-                return true;
+        $behaviors = [];
+        $handle = fopen($file, 'r');
+        while (($line = fgets($handle)) !== false) {
+            $data = json_decode($line, true);
+            if ($data && ($data['session_id'] ?? '') === $sessionId) {
+                $behaviors[] = $data;
             }
         }
-        return false;
-    }
+        fclose($handle);
 
-    private function hasNaturalClickPatterns(array $behaviors): bool
-    {
-        foreach ($behaviors as $behavior) {
-            $clicks = $behavior['click_events'] ?? [];
-            if (!empty($clicks)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private function hasScrollActivity(array $behaviors): bool
-    {
-        foreach ($behaviors as $behavior) {
-            $scrolls = $behavior['scroll_events'] ?? [];
-            if (!empty($scrolls)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private function hasRoboticBehavior(array $behaviors): bool
-    {
-        return false;
+        return $behaviors;
     }
 
     private function isFromSearchEngine(string $referer): bool
@@ -548,16 +482,6 @@ class BotDetectionEngine
                 return true;
             }
         }
-        return false;
-    }
-
-    private function isValidSearchEngineReferer(array $userData): bool
-    {
-        return true;
-    }
-
-    private function isSuspiciousReferer(string $referer): bool
-    {
         return false;
     }
 }

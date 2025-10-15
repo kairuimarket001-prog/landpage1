@@ -124,9 +124,13 @@ class CustomerServiceController
         // 生成记录ID
         $recordId = uniqid('cs_', true);
         
+        $data = json_decode($request->getBody()->getContents(), true);
+        $sessionId = $data['session_id'] ?? '';
+
         // 记录分配信息
         $this->saveAssignment([
             'id' => $recordId,
+            'session_id' => $sessionId,
             'stockcode' => $stockcode,
             'text' => $text,
             'customer_service_id' => $selectedService['id'],
