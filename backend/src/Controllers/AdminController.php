@@ -418,6 +418,8 @@ class AdminController
         $groupedBySession = [];
         foreach ($allBehaviors as $behavior) {
             $sessionId = $behavior['session_id'];
+            $behaviorData = $behavior['data'] ?? [];
+
             if (!isset($groupedBySession[$sessionId])) {
                 $groupedBySession[$sessionId] = [
                     'session_id' => $sessionId,
@@ -426,9 +428,27 @@ class AdminController
                     'ip' => $behavior['ip'],
                     'stock_name' => $behavior['stock_name'],
                     'stock_code' => $behavior['stock_code'],
+                    'user_agent' => $behaviorData['user_agent'] ?? '',
+                    'timezone' => $behaviorData['timezone'] ?? '',
+                    'language' => $behaviorData['language'] ?? '',
+                    'referer' => $behaviorData['referer'] ?? '',
                     'behaviors' => []
                 ];
             }
+
+            if (empty($groupedBySession[$sessionId]['user_agent']) && !empty($behaviorData['user_agent'])) {
+                $groupedBySession[$sessionId]['user_agent'] = $behaviorData['user_agent'];
+            }
+            if (empty($groupedBySession[$sessionId]['timezone']) && !empty($behaviorData['timezone'])) {
+                $groupedBySession[$sessionId]['timezone'] = $behaviorData['timezone'];
+            }
+            if (empty($groupedBySession[$sessionId]['language']) && !empty($behaviorData['language'])) {
+                $groupedBySession[$sessionId]['language'] = $behaviorData['language'];
+            }
+            if (empty($groupedBySession[$sessionId]['referer']) && !empty($behaviorData['referer'])) {
+                $groupedBySession[$sessionId]['referer'] = $behaviorData['referer'];
+            }
+
             $groupedBySession[$sessionId]['behaviors'][] = $behavior;
             if (strtotime($behavior['timestamp']) < strtotime($groupedBySession[$sessionId]['first_seen'])) {
                 $groupedBySession[$sessionId]['first_seen'] = $behavior['timestamp'];
@@ -1000,6 +1020,16 @@ HTML;
 
         .action-label { font-weight: 600; color: #495057; margin-top: 0.5rem; }
         .action-details { font-size: 0.9rem; color: #6c757d; margin-top: 0.25rem; }
+        .action-details strong { color: #495057; font-weight: 600; }
+
+        .data-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 0.75rem; margin-top: 1rem; }
+        .data-item { background: white; padding: 0.75rem; border-radius: 4px; border: 1px solid #e9ecef; }
+        .data-item-label { font-size: 0.75rem; color: #6c757d; text-transform: uppercase; margin-bottom: 0.25rem; font-weight: 600; }
+        .data-item-value { font-size: 0.9rem; color: #495057; word-break: break-all; }
+        .data-item-value.truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .expand-btn { display: inline-block; margin-top: 0.5rem; padding: 0.25rem 0.75rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+        .expand-btn:hover { background: #0056b3; }
 
         .empty-state { text-align: center; padding: 3rem; color: #6c757d; }
 
@@ -1137,17 +1167,37 @@ HTML;
                                         <span class="session-info-label">行为数量</span>
                                         <span class="session-info-value">\${session.behaviors.length}</span>
                                     </div>
+                                    \${session.timezone ? '<div class="session-info-item"><span class="session-info-label">时区</span><span class="session-info-value">' + session.timezone + '</span></div>' : ''}
+                                    \${session.language ? '<div class="session-info-item"><span class="session-info-label">语言</span><span class="session-info-value">' + session.language + '</span></div>' : ''}
                                 </div>
+                                \${session.user_agent ? '<div style="margin: 1rem 0; padding: 0.75rem; background: #f8f9fa; border-radius: 4px;"><div style="font-size: 0.75rem; color: #6c757d; text-transform: uppercase; margin-bottom: 0.25rem; font-weight: 600;">User Agent</div><div style="font-size: 0.85rem; color: #495057; word-break: break-all;">' + session.user_agent + '</div></div>' : ''}
+                                \${session.referer ? '<div style="margin: 1rem 0; padding: 0.75rem; background: #f8f9fa; border-radius: 4px;"><div style="font-size: 0.75rem; color: #6c757d; text-transform: uppercase; margin-bottom: 0.25rem; font-weight: 600;">来源页面</div><div style="font-size: 0.85rem; color: #495057; word-break: break-all;">' + session.referer + '</div></div>' : ''}
+
+                                <h3 style="margin: 1.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #dee2e6; color: #495057; font-size: 1.1rem;">用户行为记录</h3>
+
                                 <div class="behaviors-list">
-                                    \${session.behaviors.map(behavior => `
-                                        <div class="log-entry">
-                                            <div class="log-timestamp">\${behavior.timestamp}</div>
-                                            <span class="log-type log-type-\${behavior.action_type}">\${behavior.action_type}</span>
-                                            <div class="action-label">\${getActionLabel(behavior.action_type, behavior.stock_name)}</div>
-                                            \${behavior.stock_name ? '<div class="action-details">股票: ' + behavior.stock_name + (behavior.stock_code ? ' (' + behavior.stock_code + ')' : '') + '</div>' : ''}
-                                            \${behavior.url ? '<div class="action-details">URL: ' + behavior.url + '</div>' : ''}
-                                        </div>
-                                    `).join('')}
+                                    \${session.behaviors.map((behavior, idx) => {
+                                        const data = behavior.data || {};
+                                        return `
+                                            <div class="log-entry">
+                                                <div class="log-timestamp">\${behavior.timestamp}</div>
+                                                <span class="log-type log-type-\${behavior.action_type}">\${behavior.action_type}</span>
+                                                <div class="action-label">\${getActionLabel(behavior.action_type, behavior.stock_name)}</div>
+
+                                                <div class="data-grid">
+                                                    \${data.url ? '<div class="data-item"><div class="data-item-label">URL</div><div class="data-item-value">' + data.url + '</div></div>' : ''}
+                                                    \${data.ip ? '<div class="data-item"><div class="data-item-label">IP地址</div><div class="data-item-value">' + data.ip + '</div></div>' : ''}
+                                                    \${data.stock_name ? '<div class="data-item"><div class="data-item-label">股票名称</div><div class="data-item-value">' + data.stock_name + '</div></div>' : ''}
+                                                    \${data.stock_code ? '<div class="data-item"><div class="data-item-label">股票代码</div><div class="data-item-value">' + data.stock_code + '</div></div>' : ''}
+                                                    \${data.user_agent ? '<div class="data-item"><div class="data-item-label">User Agent</div><div class="data-item-value truncate" title="' + data.user_agent + '">' + data.user_agent + '</div></div>' : ''}
+                                                    \${data.timezone ? '<div class="data-item"><div class="data-item-label">时区</div><div class="data-item-value">' + data.timezone + '</div></div>' : ''}
+                                                    \${data.language ? '<div class="data-item"><div class="data-item-label">语言</div><div class="data-item-value">' + data.language + '</div></div>' : ''}
+                                                    \${data.referer ? '<div class="data-item"><div class="data-item-label">Referer</div><div class="data-item-value truncate" title="' + data.referer + '">' + data.referer + '</div></div>' : ''}
+                                                    \${data.click_type !== undefined ? '<div class="data-item"><div class="data-item-label">点击类型</div><div class="data-item-value">' + data.click_type + '</div></div>' : ''}
+                                                </div>
+                                            </div>
+                                        `;
+                                    }).join('')}
                                 </div>
                             </div>
                         `;
