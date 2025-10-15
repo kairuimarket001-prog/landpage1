@@ -21,9 +21,20 @@ docker-compose down
   - 用户名：`admin`
   - 密码：`admin123`
 
+## 数据存储
+
+项目使用 JSONL 文件存储数据，所有数据文件位于 `backend/data/` 目录：
+
+- `users.jsonl` - 用户信息
+- `user_profiles.jsonl` - 用户资料
+- `user_behaviors.jsonl` - 用户行为追踪
+- `assignments.jsonl` - 分配记录
+- `customer_services.json` - 客服配置
+- `settings.json` - 系统设置
+
 ## 故障排除
 
-如果遇到 "Undefined constant" 错误：
+如果遇到 500 错误或自动加载问题：
 
 ```bash
 # 重建容器
