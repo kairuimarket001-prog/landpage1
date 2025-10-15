@@ -963,18 +963,24 @@ HTML;
         .navbar h1 { margin: 0; font-size: 1.5rem; }
         .navbar a { color: white; text-decoration: none; margin-left: 1rem; }
         .navbar a:hover { text-decoration: underline; }
-        .container { max-width: 1400px; margin: 2rem auto; padding: 0 1rem; }
+        .container { max-width: 1600px; margin: 2rem auto; padding: 0 1rem; }
         .card { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 2rem; }
         .card-header { padding: 1rem 1.5rem; border-bottom: 1px solid #dee2e6; font-weight: bold; }
-        .card-body { padding: 0; }
+        .card-body { display: flex; padding: 0; }
 
-        .tabs-container { display: flex; border-bottom: 1px solid #dee2e6; overflow-x: auto; background: #f8f9fa; }
-        .tab { padding: 1rem 1.5rem; cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; transition: all 0.3s; }
+        .tabs-sidebar { width: 280px; min-width: 280px; border-right: 1px solid #dee2e6; background: #f8f9fa; overflow-y: auto; max-height: calc(100vh - 200px); }
+        .tabs-container { display: flex; flex-direction: column; }
+        .tab { padding: 1rem 1.5rem; cursor: pointer; border-left: 3px solid transparent; white-space: nowrap; transition: all 0.3s; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e9ecef; }
         .tab:hover { background: #e9ecef; }
-        .tab.active { border-bottom-color: #007bff; background: white; font-weight: bold; color: #007bff; }
-        .tab-badge { display: inline-block; margin-left: 0.5rem; padding: 0.2rem 0.5rem; background: #6c757d; color: white; border-radius: 10px; font-size: 0.75rem; }
+        .tab.active { border-left-color: #007bff; background: white; font-weight: bold; color: #007bff; }
+        .tab-info { flex: 1; overflow: hidden; }
+        .tab-title { font-size: 0.95rem; margin-bottom: 0.25rem; }
+        .tab-subtitle { font-size: 0.75rem; color: #6c757d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .tab.active .tab-subtitle { color: #007bff; }
+        .tab-badge { display: inline-block; padding: 0.2rem 0.5rem; background: #6c757d; color: white; border-radius: 10px; font-size: 0.75rem; margin-left: 0.5rem; }
         .tab.active .tab-badge { background: #007bff; }
 
+        .tab-content-wrapper { flex: 1; overflow-y: auto; max-height: calc(100vh - 200px); }
         .tab-content { display: none; padding: 1.5rem; }
         .tab-content.active { display: block; }
 
@@ -996,6 +1002,22 @@ HTML;
         .action-details { font-size: 0.9rem; color: #6c757d; margin-top: 0.25rem; }
 
         .empty-state { text-align: center; padding: 3rem; color: #6c757d; }
+
+        .tabs-sidebar::-webkit-scrollbar { width: 8px; }
+        .tabs-sidebar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .tabs-sidebar::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        .tabs-sidebar::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        .tab-content-wrapper::-webkit-scrollbar { width: 8px; }
+        .tab-content-wrapper::-webkit-scrollbar-track { background: #f1f1f1; }
+        .tab-content-wrapper::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        .tab-content-wrapper::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        @media (max-width: 768px) {
+            .card-body { flex-direction: column; }
+            .tabs-sidebar { width: 100%; border-right: none; border-bottom: 1px solid #dee2e6; max-height: 300px; }
+            .tab-content-wrapper { max-height: none; }
+        }
     </style>
 </head>
 <body>
@@ -1014,10 +1036,14 @@ HTML;
         <div class="card">
             <div class="card-header">用户追踪数据</div>
             <div class="card-body">
-                <div class="tabs-container" id="tabs-container">
-                    <div class="empty-state">加载中...</div>
+                <div class="tabs-sidebar">
+                    <div class="tabs-container" id="tabs-container">
+                        <div class="empty-state" style="padding: 2rem 1rem;">加载中...</div>
+                    </div>
                 </div>
-                <div id="tab-contents"></div>
+                <div class="tab-content-wrapper">
+                    <div id="tab-contents"></div>
+                </div>
             </div>
         </div>
         <div id="pagination-container"></div>
@@ -1064,8 +1090,8 @@ HTML;
                     sessionsData = data.sessions || [];
 
                     if (sessionsData.length === 0) {
-                        document.getElementById('tabs-container').innerHTML = '<div class="empty-state">暂无追踪数据</div>';
-                        document.getElementById('tab-contents').innerHTML = '';
+                        document.getElementById('tabs-container').innerHTML = '<div class="empty-state" style="padding: 2rem 1rem;">暂无追踪数据</div>';
+                        document.getElementById('tab-contents').innerHTML = '<div class="empty-state">暂无数据</div>';
                         document.getElementById('pagination-container').innerHTML = '';
                         return;
                     }
@@ -1076,10 +1102,14 @@ HTML;
                     sessionsData.forEach((session, index) => {
                         const isActive = index === 0 ? 'active' : '';
                         const sessionShort = session.session_id.substring(0, 8);
+                        const lastSeenTime = new Date(session.last_seen).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
 
                         tabsHTML += `
                             <div class="tab \${isActive}" data-session="\${session.session_id}" onclick="switchTab('\${session.session_id}')">
-                                用户 \${sessionShort}
+                                <div class="tab-info">
+                                    <div class="tab-title">用户 \${sessionShort}</div>
+                                    <div class="tab-subtitle">\${session.ip || '未知IP'} · \${lastSeenTime}</div>
+                                </div>
                                 <span class="tab-badge">\${session.behaviors.length}</span>
                             </div>
                         `;
