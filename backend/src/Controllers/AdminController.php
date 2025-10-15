@@ -1064,10 +1064,37 @@ HTML;
         if ($perPage < 1 || $perPage > 50) $perPage = 10;
 
         $trackingController = new TrackingController($this->logger);
-        $result = $trackingController->getUserBehaviorsPaginated($page, $perPage);
+        $behaviors = $trackingController->getUserBehaviors();
+
+        $allBehaviors = [];
+        foreach ($behaviors as $sessionId => $actions) {
+            foreach ($actions as $action) {
+                $action['session_id'] = $sessionId;
+                $allBehaviors[] = $action;
+            }
+        }
+
+        usort($allBehaviors, function($a, $b) {
+            $timeA = $a['timestamp'] ?? '';
+            $timeB = $b['timestamp'] ?? '';
+            return strtotime($timeB) - strtotime($timeA);
+        });
+
+        $total = count($allBehaviors);
+        $offset = ($page - 1) * $perPage;
+        $paginatedBehaviors = array_slice($allBehaviors, $offset, $perPage);
+
+        $groupedBySession = [];
+        foreach ($paginatedBehaviors as $behavior) {
+            $sessionId = $behavior['session_id'];
+            if (!isset($groupedBySession[$sessionId])) {
+                $groupedBySession[$sessionId] = [];
+            }
+            $groupedBySession[$sessionId][] = $behavior;
+        }
 
         $formattedBehaviors = [];
-        foreach ($result['data'] as $sessionId => $actions) {
+        foreach ($groupedBySession as $sessionId => $actions) {
             $sessionData = [
                 'session_id' => $sessionId,
                 'actions' => [],
@@ -1127,7 +1154,12 @@ HTML;
 
         $responseData = [
             'data' => $formattedBehaviors,
-            'pagination' => $result['pagination']
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => count($formattedBehaviors),
+                'total_pages' => (int)ceil(count($formattedBehaviors) / $perPage)
+            ]
         ];
 
         $response->getBody()->write(json_encode($responseData));

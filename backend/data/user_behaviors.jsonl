@@ -1,0 +1,3 @@
+{"session_id":"test_123","action_type":"page_load","stock_name":"测试股票","stock_code":"TEST","timestamp":"2025-10-15 12:00:00","ip":"127.0.0.1"}
+{"session_id":"test_124","action_type":"popup_triggered","stock_name":"测试股票2","stock_code":"TEST2","timestamp":"2025-10-15 12:01:00","ip":"127.0.0.2"}
+{"session_id":"test_125","action_type":"conversion","stock_name":"测试股票3","stock_code":"TEST3","timestamp":"2025-10-15 12:02:00","ip":"127.0.0.3"}

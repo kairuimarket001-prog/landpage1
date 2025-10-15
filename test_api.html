@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>API测试</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+        .test-box { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h2 { color: #333; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 4px; overflow-x: auto; }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <h1>数据追踪API测试</h1>
+
+    <div class="test-box">
+        <h2>1. 测试用户行为追踪API</h2>
+        <button onclick="testBehaviorsAPI()">测试 /api/behaviors</button>
+        <div id="behaviors-result"></div>
+    </div>
+
+    <div class="test-box">
+        <h2>2. 测试页面追踪API</h2>
+        <button onclick="testTrackingAPI()">测试 /api/tracking</button>
+        <div id="tracking-result"></div>
+    </div>
+
+    <div class="test-box">
+        <h2>3. 测试分配记录API</h2>
+        <button onclick="testAssignmentsAPI()">测试 /api/assignments</button>
+        <div id="assignments-result"></div>
+    </div>
+
+    <div class="test-box">
+        <h2>4. 测试管理后台用户行为API（需要登录）</h2>
+        <button onclick="testAdminBehaviorsAPI()">测试 /admin/api/user-behaviors</button>
+        <div id="admin-result"></div>
+    </div>
+
+    <script>
+        async function testBehaviorsAPI() {
+            const resultDiv = document.getElementById('behaviors-result');
+            resultDiv.innerHTML = '<p>加载中...</p>';
+
+            try {
+                const response = await fetch('/api/behaviors?page=1&per_page=10');
+                const data = await response.json();
+
+                resultDiv.innerHTML = `
+                    <p class="success">✅ API调用成功</p>
+                    <p>状态码: ${response.status}</p>
+                    <p>数据条数: ${data.data ? data.data.length : 0}</p>
+                    <p>总记录数: ${data.total || 0}</p>
+                    <p>总页数: ${data.total_pages || 0}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ 错误: ${error.message}</p>
+                `;
+            }
+        }
+
+        async function testTrackingAPI() {
+            const resultDiv = document.getElementById('tracking-result');
+            resultDiv.innerHTML = '<p>加载中...</p>';
+
+            try {
+                const response = await fetch('/api/tracking?page=1&per_page=10');
+                const data = await response.json();
+
+                resultDiv.innerHTML = `
+                    <p class="success">✅ API调用成功</p>
+                    <p>状态码: ${response.status}</p>
+                    <p>数据条数: ${data.data ? data.data.length : 0}</p>
+                    <p>总记录数: ${data.total || 0}</p>
+                    <p>总页数: ${data.total_pages || 0}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ 错误: ${error.message}</p>
+                `;
+            }
+        }
+
+        async function testAssignmentsAPI() {
+            const resultDiv = document.getElementById('assignments-result');
+            resultDiv.innerHTML = '<p>加载中...</p>';
+
+            try {
+                const response = await fetch('/api/assignments?page=1&per_page=10');
+                const data = await response.json();
+
+                resultDiv.innerHTML = `
+                    <p class="success">✅ API调用成功</p>
+                    <p>状态码: ${response.status}</p>
+                    <p>数据条数: ${data.data ? data.data.length : 0}</p>
+                    <p>总记录数: ${data.total || 0}</p>
+                    <p>总页数: ${data.total_pages || 0}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ 错误: ${error.message}</p>
+                `;
+            }
+        }
+
+        async function testAdminBehaviorsAPI() {
+            const resultDiv = document.getElementById('admin-result');
+            resultDiv.innerHTML = '<p>加载中...</p>';
+
+            try {
+                const response = await fetch('/admin/api/user-behaviors?page=1&per_page=10');
+                const data = await response.json();
+
+                if (response.status === 401 || data.error === 'Unauthorized') {
+                    resultDiv.innerHTML = `
+                        <p class="error">❌ 需要先登录管理后台</p>
+                        <p><a href="/admin" target="_blank">点击这里登录</a>（用户名: admin, 密码: admin123）</p>
+                    `;
+                    return;
+                }
+
+                resultDiv.innerHTML = `
+                    <p class="success">✅ API调用成功</p>
+                    <p>状态码: ${response.status}</p>
+                    <p>会话数: ${data.data ? data.data.length : 0}</p>
+                    <p>总记录数: ${data.pagination ? data.pagination.total : 0}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ 错误: ${error.message}</p>
+                `;
+            }
+        }
+
+        // 自动测试公共API
+        window.addEventListener('DOMContentLoaded', function() {
+            testBehaviorsAPI();
+        });
+    </script>
+</body>
+</html>
