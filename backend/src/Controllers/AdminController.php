@@ -545,7 +545,7 @@ class AdminController
         $latestProfile = null;
         while (($line = fgets($handle)) !== false) {
             $profile = json_decode($line, true);
-            if ($profile && ($profile['user_id'] ?? '') === $user['id']) {
+            if ($profile && isset($user['id']) && ($profile['user_id'] ?? '') === $user['id']) {
                 $latestProfile = $profile;
             }
         }
