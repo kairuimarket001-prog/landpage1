@@ -5,6 +5,8 @@ use App\Controllers\StockController;
 use App\Controllers\TrackingController;
 use App\Controllers\CustomerServiceController;
 use App\Controllers\AdminController;
+use App\Controllers\BotDetectionController;
+use App\Controllers\UserMonitoringController;
 use Slim\App;
 use Slim\Interfaces\RouteCollectorProxyInterface as Group;
 
@@ -34,6 +36,13 @@ return function (App $app) {
         $group->post('/page_leaveurl', CustomerServiceController::class . ':pageLeaveUrl');
     });
 
+    // 机器人检测API
+    $app->group('/api/bot-detection', function (Group $group) {
+        $group->post('/analyze', BotDetectionController::class . ':analyzeUser');
+        $group->post('/fingerprint', BotDetectionController::class . ':saveFingerprint');
+        $group->post('/behavior', BotDetectionController::class . ':saveBehavior');
+    });
+
     // 管理后台页面
     $app->group('/admin', function (Group $group) {
         // 登录页面和登录处理（不需要认证）
@@ -56,6 +65,13 @@ return function (App $app) {
         $group->get('/api/user-behaviors', AdminController::class . ':apiUserBehaviors');
         $group->get('/api/assignments', AdminController::class . ':apiAssignments');
         $group->map(['GET', 'POST'], '/api/settings', AdminController::class . ':apiSettings');
+
+        // 用户监控中心
+        $group->get('/user-monitoring', UserMonitoringController::class . ':dashboard');
+        $group->get('/api/user-monitoring/users', UserMonitoringController::class . ':apiUsersList');
+        $group->get('/api/user-monitoring/users/{userId}', UserMonitoringController::class . ':apiUserDetail');
+        $group->put('/api/user-monitoring/users/{userId}', UserMonitoringController::class . ':apiUpdateUser');
+        $group->get('/api/user-monitoring/statistics', UserMonitoringController::class . ':apiStatistics');
     });
 
     // 跳转页面

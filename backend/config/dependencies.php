@@ -11,6 +11,8 @@ use App\Controllers\StockController;
 use App\Controllers\TrackingController;
 use App\Controllers\CustomerServiceController;
 use App\Controllers\AdminController;
+use App\Controllers\BotDetectionController;
+use App\Controllers\UserMonitoringController;
 
 return function (ContainerBuilder $containerBuilder) {
     $containerBuilder->addDefinitions([
@@ -53,6 +55,14 @@ return function (ContainerBuilder $containerBuilder) {
 
         AdminController::class => function (ContainerInterface $c) {
             return new AdminController($c->get(LoggerInterface::class));
+        },
+
+        BotDetectionController::class => function (ContainerInterface $c) {
+            return new BotDetectionController($c->get(LoggerInterface::class));
+        },
+
+        UserMonitoringController::class => function (ContainerInterface $c) {
+            return new UserMonitoringController($c->get(LoggerInterface::class));
         },
     ]);
 };
