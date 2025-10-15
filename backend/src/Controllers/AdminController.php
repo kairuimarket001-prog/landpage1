@@ -605,7 +605,9 @@ HTML;
             <a href="/admin/dashboard">仪表板</a>
             <a href="/admin/customer-services">客服管理</a>
             <a href="/admin/tracking">追踪数据</a>
+            <a href="/admin/user-behaviors">用户行为</a>
             <a href="/admin/assignments">分配记录</a>
+            <a href="/admin/user-detection">用户检测</a>
             <a href="/admin/logout">退出</a>
         </div>
     </nav>
@@ -793,7 +795,9 @@ HTML;
             <a href="/admin/dashboard">仪表板</a>
             <a href="/admin/customer-services">客服管理</a>
             <a href="/admin/tracking">追踪数据</a>
+            <a href="/admin/user-behaviors">用户行为</a>
             <a href="/admin/assignments">分配记录</a>
+            <a href="/admin/user-detection">用户检测</a>
             <a href="/admin/logout">退出</a>
         </div>
     </nav>
@@ -1057,7 +1061,9 @@ HTML;
             <a href="/admin/dashboard">仪表板</a>
             <a href="/admin/customer-services">客服管理</a>
             <a href="/admin/tracking">追踪数据</a>
+            <a href="/admin/user-behaviors">用户行为</a>
             <a href="/admin/assignments">分配记录</a>
+            <a href="/admin/user-detection">用户检测</a>
             <a href="/admin/logout">退出</a>
         </div>
     </nav>
@@ -1280,7 +1286,9 @@ HTML;
             <a href="/admin/dashboard">仪表板</a>
             <a href="/admin/customer-services">客服管理</a>
             <a href="/admin/tracking">追踪数据</a>
+            <a href="/admin/user-behaviors">用户行为</a>
             <a href="/admin/assignments">分配记录</a>
+            <a href="/admin/user-detection">用户检测</a>
             <a href="/admin/logout">退出</a>
         </div>
     </nav>
@@ -1479,6 +1487,327 @@ HTML;
 
         $response->getBody()->write(json_encode($responseData));
         return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    public function userDetection(Request $request, Response $response): Response
+    {
+        $authResponse = $this->requireAuth($request, $response);
+        if ($authResponse) return $authResponse;
+
+        $html = $this->renderUserDetection();
+        $response->getBody()->write($html);
+        return $response->withHeader('Content-Type', 'text/html; charset=utf-8');
+    }
+
+    public function apiUserDetection(Request $request, Response $response): Response
+    {
+        $authResponse = $this->requireAuth($request, $response);
+        if ($authResponse) {
+            $response->getBody()->write(json_encode(['error' => 'Unauthorized']));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(401);
+        }
+
+        $queryParams = $request->getQueryParams();
+        $page = isset($queryParams['page']) ? max(1, (int)$queryParams['page']) : 1;
+        $perPage = isset($queryParams['per_page']) ? max(1, min(50, (int)$queryParams['per_page'])) : 10;
+        $filterType = $queryParams['filter'] ?? 'all';
+
+        $detectionController = new \App\Controllers\DetectionController($this->logger);
+        $results = $detectionController->getDetectionResults($page, $perPage, $filterType);
+
+        $response->getBody()->write(json_encode($results));
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    private function renderUserDetection(): string
+    {
+        return <<<'HTML'
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户检测 - 管理后台</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f8f9fa; }
+        .navbar { background: #343a40; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { margin: 0; font-size: 1.5rem; }
+        .navbar a { color: white; text-decoration: none; margin-left: 1rem; }
+        .navbar a:hover { text-decoration: underline; }
+        .container { max-width: 1600px; margin: 2rem auto; padding: 0 1rem; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; }
+        .stat-number { font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem; }
+        .stat-label { color: #6c757d; font-size: 0.9rem; }
+        .stat-number.human { color: #28a745; }
+        .stat-number.ai { color: #ffc107; }
+        .stat-number.bot { color: #dc3545; }
+
+        .card { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+        .card-header { padding: 1rem 1.5rem; border-bottom: 1px solid #dee2e6; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        .card-body { padding: 1.5rem; }
+
+        .filter-bar { display: flex; gap: 1rem; margin-bottom: 1.5rem; align-items: center; }
+        .filter-bar select { padding: 0.5rem; border: 1px solid #ced4da; border-radius: 4px; }
+        .filter-bar button { padding: 0.5rem 1rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .filter-bar button:hover { background: #0056b3; }
+
+        .table-wrapper { overflow-x: auto; }
+        .table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        .table th, .table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #dee2e6; }
+        .table th { background: #f8f9fa; font-weight: bold; white-space: nowrap; }
+        .table tbody tr:hover { background: #f8f9fa; }
+
+        .user-id { font-family: monospace; font-size: 0.85rem; color: #6c757d; }
+        .user-data-cell { position: relative; cursor: help; color: #007bff; text-decoration: underline dotted; }
+
+        .tooltip { position: absolute; display: none; background: rgba(0,0,0,0.9); color: white; padding: 1rem; border-radius: 6px; z-index: 1000; min-width: 300px; max-width: 500px; font-size: 0.85rem; line-height: 1.5; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .tooltip.show { display: block; }
+        .tooltip-title { font-weight: bold; margin-bottom: 0.5rem; color: #ffc107; }
+        .tooltip-item { margin: 0.25rem 0; }
+        .tooltip-label { color: #adb5bd; }
+        .tooltip-value { color: white; word-break: break-all; }
+
+        .reasons { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .reason-tag { display: inline-block; padding: 0.25rem 0.75rem; background: #e9ecef; color: #495057; border-radius: 12px; font-size: 0.85rem; }
+
+        .score-cell { min-width: 150px; }
+        .score-bar { width: 100%; height: 20px; background: #e9ecef; border-radius: 10px; overflow: hidden; position: relative; }
+        .score-fill { height: 100%; transition: width 0.3s; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.75rem; font-weight: bold; }
+        .score-fill.high { background: linear-gradient(90deg, #28a745, #20c997); }
+        .score-fill.medium { background: linear-gradient(90deg, #ffc107, #fd7e14); }
+        .score-fill.low { background: linear-gradient(90deg, #dc3545, #c82333); }
+
+        .result-badge { display: inline-block; padding: 0.35rem 0.75rem; border-radius: 4px; font-weight: bold; font-size: 0.85rem; }
+        .result-badge.human { background: #d4edda; color: #155724; }
+        .result-badge.ai { background: #fff3cd; color: #856404; }
+        .result-badge.bot { background: #f8d7da; color: #721c24; }
+
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 1.5rem; }
+        .page-btn { padding: 0.5rem 1rem; border: 1px solid #dee2e6; background: white; color: #007bff; border-radius: 4px; cursor: pointer; }
+        .page-btn:hover { background: #e9ecef; }
+        .page-btn.active { background: #007bff; color: white; }
+        .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .empty-state { text-align: center; padding: 3rem; color: #6c757d; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>用户检测</h1>
+        <div>
+            <a href="/admin/dashboard">仪表板</a>
+            <a href="/admin/customer-services">客服管理</a>
+            <a href="/admin/tracking">追踪数据</a>
+            <a href="/admin/user-behaviors">用户行为</a>
+            <a href="/admin/assignments">分配记录</a>
+            <a href="/admin/user-detection" style="font-weight: bold;">用户检测</a>
+            <a href="/admin/logout">退出</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="total-users">0</div>
+                <div class="stat-label">总用户数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number human" id="human-count">0</div>
+                <div class="stat-label">真人用户</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number ai" id="ai-count">0</div>
+                <div class="stat-label">疑似AI</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number bot" id="bot-count">0</div>
+                <div class="stat-label">机器人</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                实时用户评分列表
+                <button onclick="loadDetectionData(currentPage)">刷新数据</button>
+            </div>
+            <div class="card-body">
+                <div class="filter-bar">
+                    <label>筛选结果:</label>
+                    <select id="filter-select" onchange="filterChanged()">
+                        <option value="all">全部</option>
+                        <option value="human">真人</option>
+                        <option value="ai">疑似AI</option>
+                        <option value="bot">机器人</option>
+                    </select>
+                </div>
+
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>用户ID</th>
+                                <th>用户数据</th>
+                                <th>判断理由</th>
+                                <th>实际得分</th>
+                                <th>判断结果</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detection-tbody">
+                            <tr><td colspan="5" class="empty-state">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="pagination-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let currentFilter = 'all';
+
+        function filterChanged() {
+            currentFilter = document.getElementById('filter-select').value;
+            currentPage = 1;
+            loadDetectionData(currentPage);
+        }
+
+        function loadDetectionData(page = 1) {
+            currentPage = page;
+            const url = `/admin/api/user-detection?page=${page}&per_page=10&filter=${currentFilter}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(result => {
+                    const stats = result.stats || {};
+                    document.getElementById('total-users').textContent = stats.total || 0;
+                    document.getElementById('human-count').textContent = stats.human || 0;
+                    document.getElementById('ai-count').textContent = stats.ai || 0;
+                    document.getElementById('bot-count').textContent = stats.bot || 0;
+
+                    const data = result.data || [];
+                    const tbody = document.getElementById('detection-tbody');
+
+                    if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" class="empty-state">暂无数据</td></tr>';
+                        document.getElementById('pagination-container').innerHTML = '';
+                        return;
+                    }
+
+                    tbody.innerHTML = data.map(item => {
+                        const sessionShort = item.session_id.substring(0, 12);
+                        const userData = item.user_data || {};
+                        const reasons = item.reasons || [];
+                        const score = item.score || 0;
+
+                        let scoreClass = 'low';
+                        if (score >= 70) scoreClass = 'high';
+                        else if (score >= 40) scoreClass = 'medium';
+
+                        const userDataJson = JSON.stringify(userData, null, 2);
+
+                        return `
+                            <tr>
+                                <td><span class="user-id">${sessionShort}...</span></td>
+                                <td>
+                                    <span class="user-data-cell" onmouseenter="showTooltip(event, '${sessionShort}')" onmouseleave="hideTooltip()">
+                                        查看详情
+                                    </span>
+                                    <div class="tooltip" id="tooltip-${sessionShort}">
+                                        <div class="tooltip-title">用户数据</div>
+                                        <div class="tooltip-item"><span class="tooltip-label">IP:</span> <span class="tooltip-value">${userData.ip || 'unknown'}</span></div>
+                                        <div class="tooltip-item"><span class="tooltip-label">股票:</span> <span class="tooltip-value">${userData.stock_name || ''} (${userData.stock_code || ''})</span></div>
+                                        <div class="tooltip-item"><span class="tooltip-label">时区:</span> <span class="tooltip-value">${userData.timezone || ''}</span></div>
+                                        <div class="tooltip-item"><span class="tooltip-label">语言:</span> <span class="tooltip-value">${userData.language || ''}</span></div>
+                                        <div class="tooltip-item"><span class="tooltip-label">来源:</span> <span class="tooltip-value">${userData.referer || '直接访问'}</span></div>
+                                        <div class="tooltip-item"><span class="tooltip-label">UA:</span> <span class="tooltip-value" style="font-size: 0.75rem;">${userData.user_agent || ''}</span></div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="reasons">
+                                        ${reasons.map(r => `<span class="reason-tag">${r}</span>`).join('')}
+                                    </div>
+                                </td>
+                                <td class="score-cell">
+                                    <div class="score-bar">
+                                        <div class="score-fill ${scoreClass}" style="width: ${score}%">${score}分</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="result-badge ${item.result}">${item.result_text}</span>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+
+                    renderPagination(result.page, result.total_pages);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('detection-tbody').innerHTML = '<tr><td colspan="5" class="empty-state">加载失败</td></tr>';
+                });
+        }
+
+        function showTooltip(event, sessionId) {
+            const tooltip = document.getElementById('tooltip-' + sessionId);
+            if (tooltip) {
+                tooltip.classList.add('show');
+                const rect = event.target.getBoundingClientRect();
+                tooltip.style.top = (rect.bottom + 5) + 'px';
+                tooltip.style.left = rect.left + 'px';
+            }
+        }
+
+        function hideTooltip() {
+            document.querySelectorAll('.tooltip').forEach(t => t.classList.remove('show'));
+        }
+
+        function renderPagination(currentPage, totalPages) {
+            const container = document.getElementById('pagination-container');
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = '<div class="pagination">';
+
+            if (currentPage > 1) {
+                html += `<button class="page-btn" onclick="loadDetectionData(${currentPage - 1})">上一页</button>`;
+            } else {
+                html += `<button class="page-btn" disabled>上一页</button>`;
+            }
+
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === currentPage) {
+                    html += `<button class="page-btn active">${i}</button>`;
+                } else if (Math.abs(i - currentPage) <= 2 || i === 1 || i === totalPages) {
+                    html += `<button class="page-btn" onclick="loadDetectionData(${i})">${i}</button>`;
+                } else if (Math.abs(i - currentPage) === 3) {
+                    html += `<span>...</span>`;
+                }
+            }
+
+            if (currentPage < totalPages) {
+                html += `<button class="page-btn" onclick="loadDetectionData(${currentPage + 1})">下一页</button>`;
+            } else {
+                html += `<button class="page-btn" disabled>下一页</button>`;
+            }
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDetectionData(1);
+            setInterval(() => loadDetectionData(currentPage), 30000);
+        });
+    </script>
+</body>
+</html>
+HTML;
     }
 
     private function renderUserBehaviors(): string

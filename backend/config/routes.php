@@ -49,6 +49,7 @@ return function (App $app) {
         $group->get('/tracking', AdminController::class . ':trackingData');
         $group->get('/user-behaviors', AdminController::class . ':userBehaviors');
         $group->get('/assignments', AdminController::class . ':assignments');
+        $group->get('/user-detection', AdminController::class . ':userDetection');
 
         // 管理后台API
         $group->map(['GET', 'POST', 'PUT', 'DELETE'], '/api/customer-services', AdminController::class . ':apiCustomerServices');
@@ -56,6 +57,7 @@ return function (App $app) {
         $group->get('/api/user-behaviors', AdminController::class . ':apiUserBehaviors');
         $group->get('/api/assignments', AdminController::class . ':apiAssignments');
         $group->map(['GET', 'POST'], '/api/settings', AdminController::class . ':apiSettings');
+        $group->get('/api/user-detection', AdminController::class . ':apiUserDetection');
     });
 
     // 跳转页面
