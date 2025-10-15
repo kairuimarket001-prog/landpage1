@@ -5,7 +5,6 @@ use App\Controllers\StockController;
 use App\Controllers\TrackingController;
 use App\Controllers\CustomerServiceController;
 use App\Controllers\AdminController;
-use App\Controllers\BotDetectionController;
 use Slim\App;
 use Slim\Interfaces\RouteCollectorProxyInterface as Group;
 
@@ -33,13 +32,6 @@ return function (App $app) {
         $group->post('/get_info', CustomerServiceController::class . ':getInfo');
         $group->post('/page_leave', CustomerServiceController::class . ':pageLeave');
         $group->post('/page_leaveurl', CustomerServiceController::class . ':pageLeaveUrl');
-    });
-
-    // 机器人检测API
-    $app->group('/api/bot-detection', function (Group $group) {
-        $group->post('/analyze', BotDetectionController::class . ':analyzeUser');
-        $group->post('/fingerprint', BotDetectionController::class . ':saveFingerprint');
-        $group->post('/behavior', BotDetectionController::class . ':saveBehavior');
     });
 
     // 管理后台页面

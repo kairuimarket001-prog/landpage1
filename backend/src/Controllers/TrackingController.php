@@ -63,7 +63,7 @@ class TrackingController
     public function upPageTrack(Request $request, Response $response): Response
     {
         $data = json_decode($request->getBody()->getContents(), true);
-
+        
         $trackingData = [
             'id' => $data['id'] ?? 0,
             'timestamp' => date('c'),
@@ -74,6 +74,17 @@ class TrackingController
         $this->logger->info('Up page tracking', $trackingData);
 
         $this->saveTrackingData('uppage_track', $trackingData);
+
+        try {
+            $this->supabase->insert('page_tracking', array_merge($trackingData, [
+                'url' => '',
+                'click_type' => 0,
+                'timezone' => '',
+                'language' => ''
+            ]));
+        } catch (\Exception $e) {
+            $this->logger->error('Failed to save page tracking to Supabase', ['error' => $e->getMessage()]);
+        }
 
         $response->getBody()->write(json_encode(['status' => 'success', 'message' => 'Up page tracking recorded']));
         return $response->withHeader('Content-Type', 'application/json');
@@ -149,31 +160,49 @@ class TrackingController
 
     public function getUserBehaviors(): array
     {
-        $file = $this->dataDir . '/user_behaviors.jsonl';
-        if (!file_exists($file)) {
-            return [];
-        }
+        try {
+            $result = $this->supabase->query('user_behaviors', [], 'created_at.desc', 1000, 0);
+            $behaviors = $result['data'];
 
-        $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        $behaviors = [];
-
-        foreach ($lines as $line) {
-            $data = json_decode($line, true);
-            if ($data) {
-                $behaviors[] = $data;
+            $groupedBySession = [];
+            foreach ($behaviors as $behavior) {
+                $sessionId = $behavior['session_id'];
+                if (!isset($groupedBySession[$sessionId])) {
+                    $groupedBySession[$sessionId] = [];
+                }
+                $groupedBySession[$sessionId][] = $behavior;
             }
-        }
 
-        $groupedBySession = [];
-        foreach ($behaviors as $behavior) {
-            $sessionId = $behavior['session_id'];
-            if (!isset($groupedBySession[$sessionId])) {
-                $groupedBySession[$sessionId] = [];
+            return $groupedBySession;
+        } catch (\Exception $e) {
+            $this->logger->error('Failed to get user behaviors from Supabase', ['error' => $e->getMessage()]);
+
+            $file = $this->dataDir . '/user_behaviors.jsonl';
+            if (!file_exists($file)) {
+                return [];
             }
-            $groupedBySession[$sessionId][] = $behavior;
-        }
 
-        return $groupedBySession;
+            $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            $behaviors = [];
+
+            foreach ($lines as $line) {
+                $data = json_decode($line, true);
+                if ($data) {
+                    $behaviors[] = $data;
+                }
+            }
+
+            $groupedBySession = [];
+            foreach ($behaviors as $behavior) {
+                $sessionId = $behavior['session_id'];
+                if (!isset($groupedBySession[$sessionId])) {
+                    $groupedBySession[$sessionId] = [];
+                }
+                $groupedBySession[$sessionId][] = $behavior;
+            }
+
+            return $groupedBySession;
+        }
     }
 
     public function getUserBehaviorsPaginated(Request $request, Response $response): Response
