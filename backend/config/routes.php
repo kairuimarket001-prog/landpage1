@@ -47,11 +47,13 @@ return function (App $app) {
         $group->get('/customer-services', AdminController::class . ':customerServices');
         $group->post('/customer-services', AdminController::class . ':customerServices');
         $group->get('/tracking', AdminController::class . ':trackingData');
+        $group->get('/user-behaviors', AdminController::class . ':userBehaviors');
         $group->get('/assignments', AdminController::class . ':assignments');
-        
+
         // 管理后台API
         $group->map(['GET', 'POST', 'PUT', 'DELETE'], '/api/customer-services', AdminController::class . ':apiCustomerServices');
         $group->get('/api/tracking', AdminController::class . ':apiTrackingData');
+        $group->get('/api/user-behaviors', AdminController::class . ':apiUserBehaviors');
         $group->get('/api/assignments', AdminController::class . ':apiAssignments');
         $group->map(['GET', 'POST'], '/api/settings', AdminController::class . ':apiSettings');
     });

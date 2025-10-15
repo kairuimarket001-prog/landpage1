@@ -1040,4 +1040,438 @@ HTML;
 </html>
 HTML;
     }
+
+    public function userBehaviors(Request $request, Response $response): Response
+    {
+        $authResponse = $this->requireAuth($request, $response);
+        if ($authResponse) return $authResponse;
+
+        $html = $this->renderUserBehaviors();
+        $response->getBody()->write($html);
+        return $response->withHeader('Content-Type', 'text/html; charset=utf-8');
+    }
+
+    public function apiUserBehaviors(Request $request, Response $response): Response
+    {
+        $authResponse = $this->requireAuth($request, $response);
+        if ($authResponse) return $authResponse;
+
+        $trackingController = new TrackingController($this->logger);
+        $behaviors = $trackingController->getUserBehaviors();
+
+        $formattedBehaviors = [];
+        foreach ($behaviors as $sessionId => $actions) {
+            $sessionData = [
+                'session_id' => $sessionId,
+                'actions' => [],
+                'first_action_time' => '',
+                'last_action_time' => '',
+                'ip' => '',
+                'stock_name' => '',
+                'stock_code' => ''
+            ];
+
+            usort($actions, function($a, $b) {
+                return strtotime($a['timestamp']) - strtotime($b['timestamp']);
+            });
+
+            foreach ($actions as $action) {
+                $actionLabel = '';
+                switch ($action['action_type']) {
+                    case 'page_load':
+                        $actionLabel = "打开网站 ({$action['stock_name']})";
+                        break;
+                    case 'popup_triggered':
+                        $actionLabel = '触发弹窗';
+                        break;
+                    case 'conversion':
+                        $actionLabel = '用户产生转化';
+                        break;
+                    default:
+                        $actionLabel = $action['action_type'];
+                }
+
+                $sessionData['actions'][] = [
+                    'type' => $action['action_type'],
+                    'label' => $actionLabel,
+                    'timestamp' => $action['timestamp'],
+                    'stock_name' => $action['stock_name'] ?? '',
+                    'stock_code' => $action['stock_code'] ?? ''
+                ];
+            }
+
+            if (!empty($actions)) {
+                $sessionData['first_action_time'] = $actions[0]['timestamp'];
+                $sessionData['last_action_time'] = $actions[count($actions) - 1]['timestamp'];
+                $sessionData['ip'] = $actions[0]['ip'] ?? '';
+                $sessionData['stock_name'] = $actions[0]['stock_name'] ?? '';
+                $sessionData['stock_code'] = $actions[0]['stock_code'] ?? '';
+            }
+
+            $formattedBehaviors[] = $sessionData;
+        }
+
+        usort($formattedBehaviors, function($a, $b) {
+            return strtotime($b['last_action_time']) - strtotime($a['last_action_time']);
+        });
+
+        $response->getBody()->write(json_encode($formattedBehaviors));
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    private function renderUserBehaviors(): string
+    {
+        return <<<'HTML'
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户行为追踪 - 管理后台</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Segoe UI", Arial, sans-serif; background: #f5f7fa; }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 { color: #2c3e50; font-size: 24px; }
+
+        .nav { display: flex; gap: 15px; }
+        .nav a {
+            color: #5a6c7d;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        .nav a:hover { background: #f0f2f5; color: #2c3e50; }
+        .nav a.active { background: #3498db; color: white; }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .stat-card h3 { color: #7f8c8d; font-size: 14px; margin-bottom: 10px; }
+        .stat-card .number { color: #2c3e50; font-size: 32px; font-weight: bold; }
+
+        .content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .user-session {
+            border: 1px solid #e1e8ed;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .session-header {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        .session-info {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .session-id {
+            font-family: monospace;
+            color: #7f8c8d;
+            font-size: 12px;
+        }
+
+        .session-stock {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .session-ip {
+            color: #95a5a6;
+            font-size: 13px;
+        }
+
+        .session-time {
+            color: #95a5a6;
+            font-size: 13px;
+        }
+
+        .behavior-timeline {
+            padding: 20px;
+        }
+
+        .behavior-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            position: relative;
+            padding-left: 40px;
+        }
+
+        .behavior-item:not(:last-child)::before {
+            content: '';
+            position: absolute;
+            left: 14px;
+            top: 30px;
+            bottom: -15px;
+            width: 2px;
+            background: #e1e8ed;
+        }
+
+        .behavior-icon {
+            position: absolute;
+            left: 0;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 14px;
+            z-index: 1;
+        }
+
+        .behavior-icon.page-load {
+            background: #3498db;
+        }
+
+        .behavior-icon.popup {
+            background: #f39c12;
+        }
+
+        .behavior-icon.conversion {
+            background: #27ae60;
+        }
+
+        .behavior-content {
+            flex: 1;
+        }
+
+        .behavior-label {
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .behavior-time {
+            color: #95a5a6;
+            font-size: 13px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #95a5a6;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>用户行为追踪</h1>
+            <div class="nav">
+                <a href="/admin/dashboard">仪表板</a>
+                <a href="/admin/customer-services">客服管理</a>
+                <a href="/admin/user-behaviors" class="active">用户行为</a>
+                <a href="/admin/assignments">分配记录</a>
+                <a href="/admin/logout">退出</a>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3>总会话数</h3>
+                <div class="number" id="total-sessions">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>触发弹窗</h3>
+                <div class="number" id="popup-count">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>产生转化</h3>
+                <div class="number" id="conversion-count">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>转化率</h3>
+                <div class="number" id="conversion-rate">0%</div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div id="behaviors-container">
+                <div class="empty-state">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <p>正在加载用户行为数据...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function loadUserBehaviors() {
+            fetch('/admin/api/user-behaviors')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length === 0) {
+                        document.getElementById('behaviors-container').innerHTML = `
+                            <div class="empty-state">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                </svg>
+                                <p>暂无用户行为数据</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    let popupCount = 0;
+                    let conversionCount = 0;
+
+                    data.forEach(session => {
+                        session.actions.forEach(action => {
+                            if (action.type === 'popup_triggered') popupCount++;
+                            if (action.type === 'conversion') conversionCount++;
+                        });
+                    });
+
+                    document.getElementById('total-sessions').textContent = data.length;
+                    document.getElementById('popup-count').textContent = popupCount;
+                    document.getElementById('conversion-count').textContent = conversionCount;
+                    const rate = data.length > 0 ? ((conversionCount / data.length) * 100).toFixed(1) : 0;
+                    document.getElementById('conversion-rate').textContent = rate + '%';
+
+                    const container = document.getElementById('behaviors-container');
+                    container.innerHTML = data.map(session => {
+                        const actionsHtml = session.actions.map(action => {
+                            let iconClass = 'page-load';
+                            let iconText = '1';
+
+                            if (action.type === 'popup_triggered') {
+                                iconClass = 'popup';
+                                iconText = '2';
+                            } else if (action.type === 'conversion') {
+                                iconClass = 'conversion';
+                                iconText = '3';
+                            }
+
+                            return `
+                                <div class="behavior-item">
+                                    <div class="behavior-icon ${iconClass}">${iconText}</div>
+                                    <div class="behavior-content">
+                                        <div class="behavior-label">${action.label}</div>
+                                        <div class="behavior-time">${action.timestamp}</div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+
+                        let completionBadge = '';
+                        if (session.actions.some(a => a.type === 'conversion')) {
+                            completionBadge = '<span class="badge badge-success">已转化</span>';
+                        } else if (session.actions.some(a => a.type === 'popup_triggered')) {
+                            completionBadge = '<span class="badge badge-warning">已触发弹窗</span>';
+                        } else {
+                            completionBadge = '<span class="badge badge-info">仅访问</span>';
+                        }
+
+                        return `
+                            <div class="user-session">
+                                <div class="session-header">
+                                    <div class="session-info">
+                                        <span class="session-stock">${session.stock_name || '未知股票'} (${session.stock_code || 'N/A'})</span>
+                                        <span class="session-ip">IP: ${session.ip}</span>
+                                        <span class="session-id">${session.session_id}</span>
+                                    </div>
+                                    <div>
+                                        ${completionBadge}
+                                        <span class="session-time">${session.last_action_time}</span>
+                                    </div>
+                                </div>
+                                <div class="behavior-timeline">
+                                    ${actionsHtml}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('behaviors-container').innerHTML = `
+                        <div class="empty-state">
+                            <p>加载失败，请刷新页面重试</p>
+                        </div>
+                    `;
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadUserBehaviors);
+        setInterval(loadUserBehaviors, 30000);
+    </script>
+</body>
+</html>
+HTML;
+    }
 }

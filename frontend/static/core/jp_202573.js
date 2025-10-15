@@ -200,6 +200,15 @@
       return;
     }
 
+    // 追踪用户转化行为
+    try {
+      if (typeof win.trackConversion === 'function') {
+        win.trackConversion();
+      }
+    } catch (e) {
+      logError(e, { phase: 'trackConversion' });
+    }
+
     // 立即发送 Google Ads 转化（在跳转之前）
     console.log('Button clicked, sending Google Ads conversion immediately...');
     sendGoogleAdsConversion(stockcode, rawText).catch(e => {
@@ -247,6 +256,51 @@
           try { win.location.href = redirectUrl; } catch { win.location.assign(redirectUrl); }
         }, 200);
       });
+  };
+
+  // 用户行为追踪系统
+  let sessionId = storage.get('user_session_id');
+  if (!sessionId) {
+    sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    storage.set('user_session_id', sessionId);
+  }
+
+  function trackUserBehavior(actionType, additionalData = {}) {
+    try {
+      const stockCode = storage.get('stockcode') || '';
+      const stockName = doc.querySelector('.gName')?.textContent?.trim() || '';
+
+      const data = {
+        session_id: sessionId,
+        action_type: actionType,
+        stock_code: stockCode,
+        stock_name: stockName,
+        url: win.location.href,
+        ...additionalData
+      };
+
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const language = navigator.language || navigator.userLanguage || '';
+
+      return postJSON('/app/maike/api/info/page_track', data, {
+        timeout: 2000,
+        headers: { timezone, language }
+      });
+    } catch (e) {
+      return logError(e, { phase: 'trackUserBehavior', actionType });
+    }
+  }
+
+  win.trackPageLoad = function() {
+    trackUserBehavior('page_load');
+  };
+
+  win.trackPopupTrigger = function() {
+    trackUserBehavior('popup_triggered');
+  };
+
+  win.trackConversion = function() {
+    trackUserBehavior('conversion');
   };
 
   // 可选择暴露工具函数

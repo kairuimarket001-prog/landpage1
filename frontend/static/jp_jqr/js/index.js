@@ -1,7 +1,15 @@
 $(document).ready(function () {
+    if (typeof window.trackPageLoad === 'function') {
+        window.trackPageLoad();
+    }
+
     $(".submitBtn1, .submitBtn2, .submitBtn3").on("click", function () {
         $("#SonContent0").css("display", "block");
-        
+
+        if (typeof window.trackPopupTrigger === 'function') {
+            window.trackPopupTrigger();
+        }
+
         const stockName = "株式名称";
         $(".tan_title").html(`${stockName} + レポートを取得中です...`);
 
