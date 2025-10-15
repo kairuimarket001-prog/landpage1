@@ -6,20 +6,16 @@ namespace App\Controllers;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
-use App\Utils\SupabaseClient;
 
 class TrackingController
 {
     private LoggerInterface $logger;
     private string $dataDir;
 
-    private SupabaseClient $supabase;
-
     public function __construct(LoggerInterface $logger)
     {
         $this->logger = $logger;
         $this->dataDir = __DIR__ . '/../../data';
-        $this->supabase = new SupabaseClient();
 
         if (!is_dir($this->dataDir)) {
             mkdir($this->dataDir, 0755, true);
@@ -55,12 +51,6 @@ class TrackingController
 
         $this->logger->info('User behavior tracking', $trackingData);
         $this->saveUserBehavior($trackingData);
-
-        try {
-            $this->supabase->insert('user_behaviors', $trackingData);
-        } catch (\Exception $e) {
-            $this->logger->error('Failed to save to Supabase', ['error' => $e->getMessage()]);
-        }
 
         $response->getBody()->write(json_encode([
             'status' => 'success',
@@ -215,41 +205,117 @@ class TrackingController
         }
     }
 
-    public function getUserBehaviorsPaginated(int $page = 1, int $perPage = 10): array
+    public function getUserBehaviorsPaginated(Request $request, Response $response): Response
     {
-        try {
-            $offset = ($page - 1) * $perPage;
+        $params = $request->getQueryParams();
+        $page = isset($params['page']) ? max(1, (int)$params['page']) : 1;
+        $perPage = isset($params['per_page']) ? max(1, min(50, (int)$params['per_page'])) : 10;
 
-            $sessions = $this->supabase->getAllSessions(1000, 0);
-            $totalSessions = count($sessions);
-            $paginatedSessions = array_slice($sessions, $offset, $perPage);
+        $file = $this->dataDir . '/user_behaviors.jsonl';
+        $behaviors = [];
 
-            $result = [];
-            foreach ($paginatedSessions as $sessionId) {
-                $behaviors = $this->supabase->getUserBehaviorsBySession($sessionId);
-                $result[$sessionId] = $behaviors['data'];
+        if (file_exists($file)) {
+            $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            $lines = array_reverse($lines);
+
+            foreach ($lines as $line) {
+                $data = json_decode($line, true);
+                if ($data) {
+                    $behaviors[] = $data;
+                }
             }
-
-            return [
-                'data' => $result,
-                'pagination' => [
-                    'current_page' => $page,
-                    'per_page' => $perPage,
-                    'total' => $totalSessions,
-                    'total_pages' => (int)ceil($totalSessions / $perPage)
-                ]
-            ];
-        } catch (\Exception $e) {
-            $this->logger->error('Failed to get paginated user behaviors', ['error' => $e->getMessage()]);
-            return [
-                'data' => [],
-                'pagination' => [
-                    'current_page' => $page,
-                    'per_page' => $perPage,
-                    'total' => 0,
-                    'total_pages' => 0
-                ]
-            ];
         }
+
+        $total = count($behaviors);
+        $offset = ($page - 1) * $perPage;
+        $paginatedData = array_slice($behaviors, $offset, $perPage);
+
+        $result = [
+            'data' => $paginatedData,
+            'page' => $page,
+            'per_page' => $perPage,
+            'total' => $total,
+            'total_pages' => (int)ceil($total / $perPage)
+        ];
+
+        $response->getBody()->write(json_encode($result));
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    public function getPageTrackingPaginated(Request $request, Response $response): Response
+    {
+        $params = $request->getQueryParams();
+        $page = isset($params['page']) ? max(1, (int)$params['page']) : 1;
+        $perPage = isset($params['per_page']) ? max(1, min(50, (int)$params['per_page'])) : 10;
+
+        $logFile = __DIR__ . '/../../logs/tracking.log';
+        $trackingData = [];
+
+        if (file_exists($logFile)) {
+            $lines = file($logFile, FILE_IGNORE_NEW_LINES);
+            $lines = array_reverse($lines);
+
+            foreach ($lines as $line) {
+                if (preg_match('/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \[uppage_track\] (.+)$/', $line, $matches)) {
+                    $data = json_decode($matches[2], true);
+                    if ($data) {
+                        $data['created_at'] = $matches[1];
+                        $trackingData[] = $data;
+                    }
+                }
+            }
+        }
+
+        $total = count($trackingData);
+        $offset = ($page - 1) * $perPage;
+        $paginatedData = array_slice($trackingData, $offset, $perPage);
+
+        $result = [
+            'data' => $paginatedData,
+            'page' => $page,
+            'per_page' => $perPage,
+            'total' => $total,
+            'total_pages' => (int)ceil($total / $perPage)
+        ];
+
+        $response->getBody()->write(json_encode($result));
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    public function getAssignmentsPaginated(Request $request, Response $response): Response
+    {
+        $params = $request->getQueryParams();
+        $page = isset($params['page']) ? max(1, (int)$params['page']) : 1;
+        $perPage = isset($params['per_page']) ? max(1, min(50, (int)$params['per_page'])) : 10;
+
+        $file = $this->dataDir . '/assignments.jsonl';
+        $assignments = [];
+
+        if (file_exists($file)) {
+            $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            $lines = array_reverse($lines);
+
+            foreach ($lines as $line) {
+                $data = json_decode($line, true);
+                if ($data) {
+                    $assignments[] = $data;
+                }
+            }
+        }
+
+        $total = count($assignments);
+        $offset = ($page - 1) * $perPage;
+        $paginatedData = array_slice($assignments, $offset, $perPage);
+
+        $result = [
+            'data' => $paginatedData,
+            'page' => $page,
+            'per_page' => $perPage,
+            'total' => $total,
+            'total_pages' => (int)ceil($total / $perPage)
+        ];
+
+        $response->getBody()->write(json_encode($result));
+        return $response->withHeader('Content-Type', 'application/json');
     }
 }
